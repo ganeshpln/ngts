@@ -1,0 +1,27 @@
+{
+  "name": "SauceDemo_PurchaseWorkflow",
+  "description": "End-to-end UiPath RPA workflow that automates a full purchase on https://www.saucedemo.com/ using the standard_user test account: logs in, adds the first two products to the cart, checks out with sample customer details, captures the order total, finishes the order, logs the total, and closes the browser.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.System.Activities": "[23.4.1, 26.0.0)",
+    "UiPath.UIAutomation.Activities": "[23.4.1, 26.0.0)"
+  },
+  "webServices": [],
+  "schemaVersion": "3.0",
+  "studioVersion": "23.10.3.0",
+  "projectId": "ee73d4fc-0538-4e08-bfd6-9f6a059899f4",
+  "projectVersion": "1.0.0",
+  "targetFramework": "Windows-Legacy",
+  "expressionLanguage": "VisualBasic",
+  "runtimeOptions": {
+    "requiresUserInteraction": true,
+    "isAttended": true,
+    "autoDispose": false,
+    "netFrameworkLegacy": true,
+    "pausableTypeVersion": 0
+  },
+  "designOptions": {
+    "projectProfile": "Development",
+    "outputType": "Process"
+  }
+}

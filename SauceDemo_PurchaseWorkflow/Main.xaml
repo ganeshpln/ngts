@@ -1,0 +1,107 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Main"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextExpression.NamespacesForImplementation>
+    <scg:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+    </scg:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <scg:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomation.Activities</AssemblyReference>
+    </scg:Collection>
+  </TextExpression.ReferencesForImplementation>
+
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Default="&quot;&quot;" Name="TotalAmount" />
+    </Sequence.Variables>
+
+    <!-- Step 1: Open the SauceDemo website in Chrome -->
+    <ui:OpenBrowser DisplayName="Open SauceDemo Website" BrowserType="Chrome" Url="https://www.saucedemo.com/">
+      <ui:OpenBrowser.Body>
+        <Sequence DisplayName="Do">
+
+          <!-- Step 2: Log in with the standard test user -->
+          <ui:TypeInto DisplayName="Enter Username" Text="standard_user" ClickBeforeTyping="True" EmptyField="True"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='user-name' tag='INPUT' /&gt;" />
+
+          <ui:TypeInto DisplayName="Enter Password" Text="secret_sauce" ClickBeforeTyping="True" EmptyField="True"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='password' tag='INPUT' /&gt;" />
+
+          <ui:Click DisplayName="Click Login Button"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='login-button' tag='INPUT' /&gt;" />
+
+          <!-- Step 3: Add the first two products to the cart -->
+          <ui:Click DisplayName="Add 'Sauce Labs Backpack' to Cart"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='add-to-cart-sauce-labs-backpack' tag='BUTTON' /&gt;" />
+
+          <ui:Click DisplayName="Add 'Sauce Labs Bike Light' to Cart"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='add-to-cart-sauce-labs-bike-light' tag='BUTTON' /&gt;" />
+
+          <!-- Step 4: Open the cart -->
+          <ui:Click DisplayName="Open Cart"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl class='shopping_cart_link' tag='A' /&gt;" />
+
+          <!-- Step 5: Proceed to checkout -->
+          <ui:Click DisplayName="Click Checkout"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='checkout' tag='BUTTON' /&gt;" />
+
+          <!-- Step 6: Enter sample customer details -->
+          <ui:TypeInto DisplayName="Enter First Name" Text="John" ClickBeforeTyping="True" EmptyField="True"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='first-name' tag='INPUT' /&gt;" />
+
+          <ui:TypeInto DisplayName="Enter Last Name" Text="Doe" ClickBeforeTyping="True" EmptyField="True"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='last-name' tag='INPUT' /&gt;" />
+
+          <ui:TypeInto DisplayName="Enter Zip Code" Text="600001" ClickBeforeTyping="True" EmptyField="True"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='postal-code' tag='INPUT' /&gt;" />
+
+          <!-- Step 7: Continue to the overview page -->
+          <ui:Click DisplayName="Click Continue"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='continue' tag='BUTTON' /&gt;" />
+
+          <!-- Step 8: Capture the total amount shown on the overview page -->
+          <ui:GetText DisplayName="Capture Order Total" Text="[TotalAmount]"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl class='summary_total_label' tag='DIV' /&gt;" />
+
+          <!-- Step 9: Finish the order -->
+          <ui:Click DisplayName="Click Finish"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;&lt;webctrl id='finish' tag='BUTTON' /&gt;" />
+
+          <!-- Step 10: Log the captured total amount -->
+          <ui:LogMessage DisplayName="Log Total Amount" Level="Info" Message="[&quot;Order completed successfully. &quot; + TotalAmount]" />
+
+          <!-- Step 11: Close the browser -->
+          <ui:CloseTab DisplayName="Close Browser"
+            Selector="&lt;html app='chrome.exe' title='Swag Labs' /&gt;" />
+
+        </Sequence>
+      </ui:OpenBrowser.Body>
+    </ui:OpenBrowser>
+
+  </Sequence>
+</Activity>
