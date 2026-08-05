@@ -1,0 +1,93 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="GetTransactionData"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:s="clr-namespace:System;assembly=mscorlib"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_TransactionNumber" Type="InArgument(x:Int32)" />
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="out_TransactionItem" Type="OutArgument(x:Object)" />
+    <x:Property Name="out_TransactionID" Type="OutArgument(x:String)" />
+  </x:Members>
+  <TextExpression.NamespacesForImplementation>
+    <scg:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+    </scg:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <scg:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomation.Activities</AssemblyReference>
+    </scg:Collection>
+  </TextExpression.ReferencesForImplementation>
+
+  <Sequence DisplayName="Do">
+    <!--
+      This workflow runs as a single local transaction rather than pulling items from an
+      Orchestrator queue: MaxTransactions (from Config, = 1) represents the one end-to-end
+      SauceDemo purchase this process performs. Point this at a real Orchestrator queue
+      ("Get Queue Item") or a data source (Excel/DB) if you need to process many purchases.
+    -->
+    <If DisplayName="More Transactions To Process?" Condition="[in_TransactionNumber &lt;= CInt(in_Config(&quot;MaxTransactions&quot;).ToString)]">
+      <If.Then>
+        <Sequence DisplayName="Hand Out Transaction">
+          <Assign DisplayName="Set TransactionID">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[out_TransactionID]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">["SauceDemo-Purchase-" + in_TransactionNumber.ToString]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Set TransactionItem">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[out_TransactionItem]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[out_TransactionID]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <ui:LogMessage DisplayName="Log Transaction Retrieved" Level="Info" Message="[&quot;Retrieved transaction: &quot; + out_TransactionID]" />
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="No More Transactions">
+          <Assign DisplayName="Clear TransactionItem">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[out_TransactionItem]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">Nothing</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Clear TransactionID">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[out_TransactionID]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">Nothing</InArgument>
+            </Assign.Value>
+          </Assign>
+          <ui:LogMessage DisplayName="Log No More Transactions" Level="Info" Message="&quot;No more transactions to process.&quot;" />
+        </Sequence>
+      </If.Else>
+    </If>
+  </Sequence>
+</Activity>

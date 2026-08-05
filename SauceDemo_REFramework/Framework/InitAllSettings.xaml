@@ -1,0 +1,76 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="InitAllSettings"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:s="clr-namespace:System;assembly=mscorlib"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_ConfigFile" Type="InArgument(x:String)" />
+    <x:Property Name="out_Config" Type="OutArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  <TextExpression.NamespacesForImplementation>
+    <scg:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+    </scg:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <scg:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomation.Activities</AssemblyReference>
+    </scg:Collection>
+  </TextExpression.ReferencesForImplementation>
+
+  <Sequence DisplayName="Do">
+    <!--
+      NOTE: The values below mirror Data\Config.xlsx exactly. This hand-authored copy of
+      InitAllSettings.xaml builds the Config dictionary directly in-memory rather than reading
+      Config.xlsx at runtime via an Excel "Read Range" activity, because that activity's XAML
+      cannot be reliably hand-written outside UiPath Studio. To make settings truly file-driven,
+      open this file in Studio and replace the Assign below with: Workbook "Read Range" on
+      Config.xlsx (Settings sheet) into a DataTable, then
+      dtSettings.AsEnumerable().ToDictionary(Function(r) r("Name").ToString, Function(r) r("Value"))
+      (a two-minute change using the toolbox).
+    -->
+    <Assign DisplayName="Build Config Dictionary">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[out_Config]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[New Dictionary(Of String, Object) From {
+  {"SauceDemoUrl", "https://www.saucedemo.com/"},
+  {"BrowserType", "Chrome"},
+  {"Username", "standard_user"},
+  {"Password", "secret_sauce"},
+  {"FirstName", "John"},
+  {"LastName", "Doe"},
+  {"ZipCode", "600001"},
+  {"MaxTransactions", 1},
+  {"MaxRetryNumber", 1},
+  {"ScreenshotsDirectoryPath", ".\Screenshots"},
+  {"LogF_BusinessProcessName", "SauceDemo Purchase Workflow"},
+  {"ConfigFile", in_ConfigFile}
+}]</InArgument>
+      </Assign.Value>
+    </Assign>
+
+    <ui:LogMessage DisplayName="Log Config Loaded" Level="Info" Message="[&quot;Configuration loaded (source of truth: &quot; + in_ConfigFile + &quot;)&quot;]" />
+  </Sequence>
+</Activity>

@@ -1,0 +1,27 @@
+{
+  "name": "SauceDemo_REFramework",
+  "description": "REFramework (UiPath Robotic Enterprise Framework) implementation of the SauceDemo end-to-end purchase automation. Uses the standard state-machine architecture (Initialization / Get Transaction Data / Process / End Process) with Config.xlsx-driven settings, structured logging, and system/business exception handling with retry.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.System.Activities": "[23.4.1, 26.0.0)",
+    "UiPath.UIAutomation.Activities": "[23.4.1, 26.0.0)"
+  },
+  "webServices": [],
+  "schemaVersion": "3.0",
+  "studioVersion": "23.10.3.0",
+  "projectId": "f70b8f07-f42b-4c9a-a7a2-c8f14efcfdf1",
+  "projectVersion": "1.0.0",
+  "targetFramework": "Windows-Legacy",
+  "expressionLanguage": "VisualBasic",
+  "runtimeOptions": {
+    "requiresUserInteraction": true,
+    "isAttended": true,
+    "autoDispose": false,
+    "netFrameworkLegacy": true,
+    "pausableTypeVersion": 0
+  },
+  "designOptions": {
+    "projectProfile": "Development",
+    "outputType": "Process"
+  }
+}

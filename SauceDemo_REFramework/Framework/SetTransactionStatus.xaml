@@ -1,0 +1,119 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="SetTransactionStatus"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:s="clr-namespace:System;assembly=mscorlib"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_TransactionNumber" Type="InArgument(x:Int32)" />
+    <x:Property Name="in_TransactionID" Type="InArgument(x:String)" />
+    <x:Property Name="in_TransactionField1" Type="InArgument(x:String)" />
+    <x:Property Name="in_SystemException" Type="InArgument(s:Exception)" />
+    <x:Property Name="in_BusinessException" Type="InArgument(ui:BusinessRuleException)" />
+    <x:Property Name="in_MaxRetryNumber" Type="InArgument(x:Int32)" />
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="io_RetryNumber" Type="InOutArgument(x:Int32)" />
+  </x:Members>
+  <TextExpression.NamespacesForImplementation>
+    <scg:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+    </scg:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <scg:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomation.Activities</AssemblyReference>
+    </scg:Collection>
+  </TextExpression.ReferencesForImplementation>
+
+  <Sequence DisplayName="Do">
+    <!--
+      No Orchestrator queue is involved, so "setting transaction status" here means: log the
+      outcome, and decide (via io_RetryNumber) whether Main's Get Transaction Data state should
+      retry the same transaction or move on to the next one. io_RetryNumber = 0 means "done with
+      this transaction number, move on"; io_RetryNumber > 0 means "retry the same transaction".
+    -->
+    <If DisplayName="Business Exception?" Condition="[in_BusinessException IsNot Nothing]">
+      <If.Then>
+        <Sequence DisplayName="Business Exception - Do Not Retry">
+          <ui:LogMessage DisplayName="Log Business Exception Status" Level="Error"
+            Message="[&quot;Transaction &quot; + in_TransactionID + &quot; failed with a business exception and will not be retried: &quot; + in_BusinessException.Message]" />
+          <Assign DisplayName="Clear RetryNumber">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Int32">[io_RetryNumber]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Int32">0</InArgument>
+            </Assign.Value>
+          </Assign>
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <If DisplayName="System Exception?" Condition="[in_SystemException IsNot Nothing]">
+          <If.Then>
+            <If DisplayName="Retries Remaining?" Condition="[io_RetryNumber &lt; in_MaxRetryNumber]">
+              <If.Then>
+                <Sequence DisplayName="Retry Transaction">
+                  <Assign DisplayName="Increment RetryNumber">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="x:Int32">[io_RetryNumber]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="x:Int32">[io_RetryNumber + 1]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                  <ui:LogMessage DisplayName="Log Retry" Level="Warn"
+                    Message="[&quot;Transaction &quot; + in_TransactionID + &quot; failed with a system exception (&quot; + in_SystemException.Message + &quot;). Retry &quot; + io_RetryNumber.ToString + &quot; of &quot; + in_MaxRetryNumber.ToString + &quot;.&quot;]" />
+                </Sequence>
+              </If.Then>
+              <If.Else>
+                <Sequence DisplayName="Give Up On Transaction">
+                  <ui:LogMessage DisplayName="Log Permanent Failure" Level="Error"
+                    Message="[&quot;Transaction &quot; + in_TransactionID + &quot; failed permanently after &quot; + in_MaxRetryNumber.ToString + &quot; retries: &quot; + in_SystemException.Message]" />
+                  <Assign DisplayName="Clear RetryNumber">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="x:Int32">[io_RetryNumber]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="x:Int32">0</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                </Sequence>
+              </If.Else>
+            </If>
+          </If.Then>
+          <If.Else>
+            <Sequence DisplayName="Success">
+              <ui:LogMessage DisplayName="Log Success" Level="Info"
+                Message="[&quot;Transaction &quot; + in_TransactionID + &quot; completed successfully. &quot; + in_TransactionField1]" />
+              <Assign DisplayName="Clear RetryNumber">
+                <Assign.To>
+                  <OutArgument x:TypeArguments="x:Int32">[io_RetryNumber]</OutArgument>
+                </Assign.To>
+                <Assign.Value>
+                  <InArgument x:TypeArguments="x:Int32">0</InArgument>
+                </Assign.Value>
+              </Assign>
+            </Sequence>
+          </If.Else>
+        </If>
+      </If.Else>
+    </If>
+  </Sequence>
+</Activity>

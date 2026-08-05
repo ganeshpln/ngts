@@ -1,0 +1,58 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="TakeScreenshot"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:s="clr-namespace:System;assembly=mscorlib"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_TransactionNumber" Type="InArgument(x:Int32)" />
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  <TextExpression.NamespacesForImplementation>
+    <scg:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+    </scg:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <scg:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomation.Activities</AssemblyReference>
+    </scg:Collection>
+  </TextExpression.ReferencesForImplementation>
+
+  <Sequence DisplayName="Do">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="ScreenshotPath" />
+    </Sequence.Variables>
+
+    <Assign DisplayName="Build Screenshot Path">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[ScreenshotPath]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[System.IO.Path.Combine(in_Config("ScreenshotsDirectoryPath").ToString, "Transaction_" + in_TransactionNumber.ToString + "_" + Now.ToString("yyyyMMdd_HHmmss") + ".png")]</InArgument>
+      </Assign.Value>
+    </Assign>
+
+    <!--
+      Kept as a documented extension point rather than a hand-guessed activity: drop a
+      "Take Screenshot" + "Save Image" (or "Screen Scraping") activity from the UI Automation
+      pack here in Studio, saving to ScreenshotPath. Wiring real screen-capture activities by
+      hand outside Studio risks an unimportable file, so this logs the intended path instead.
+    -->
+    <ui:LogMessage DisplayName="Log Screenshot Point" Level="Warn"
+      Message="[&quot;Exception screenshot point reached for transaction &quot; + in_TransactionNumber.ToString + &quot;. Add a Take Screenshot/Save Image activity here targeting: &quot; + ScreenshotPath]" />
+  </Sequence>
+</Activity>
