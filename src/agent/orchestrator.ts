@@ -30,6 +30,7 @@ import type {
   Classification,
   Decision,
   NormalisedEmail,
+  ProcessingOutcome,
   RawEmail,
   SubIntent,
   SuppressionReason,
@@ -37,7 +38,7 @@ import type {
 } from '../common/types.js';
 import type { ConfigurationStore, ScenarioConfig } from '../configuration/types.js';
 import { detectAutoReply } from '../email/autoReplyDetector.js';
-import { claimForProcessing, type ProcessingStore } from '../email/idempotency.js';
+import { claimForProcessing, type ProcessingStatus, type ProcessingStore } from '../email/idempotency.js';
 import { scanForInjection } from '../email/injectionDetector.js';
 import { checkLoop } from '../email/loopPrevention.js';
 import { normaliseEmail } from '../email/normalizer.js';
@@ -69,6 +70,19 @@ export interface ProcessResponse {
   readonly classificationLatencyMs: number | null;
   readonly promptVersion: string | null;
 }
+
+/**
+ * Where the pipeline leaves the processing row. EXECUTE and SHADOW stop at `Decided` because the
+ * actions are executed by Power Automate afterwards; the action-result callback advances the row to
+ * `Completed`. Either way the row is no longer resumable, so a replay is recognised as a duplicate.
+ */
+const TERMINAL_STATUS: Readonly<Record<ProcessingOutcome, ProcessingStatus>> = {
+  EXECUTE: 'Decided',
+  SHADOW: 'Decided',
+  HUMAN_REVIEW: 'HumanReview',
+  SUPPRESS: 'Suppressed',
+  DUPLICATE: 'Duplicate',
+};
 
 const SC99: ScenarioConfig = {
   scenarioId: 'SC-99',
@@ -134,7 +148,7 @@ export class Orchestrator {
       messageIdHash: hashIdentifier(request.message.internetMessageId ?? request.message.id),
     });
 
-    const [scenarios, routingRules, templates, thresholds, flags, safety, attachmentConfig, senderTypes, regions, reporting, aiConfig, multiIntentConfig] =
+    const [scenarios, routingRules, templates, thresholds, flags, safety, attachmentConfig, senderTypes, regions, reporting, aiConfig, multiIntentConfig, retryConfig] =
       await Promise.all([
         config.getScenarios(),
         config.getRoutingRules(),
@@ -148,6 +162,7 @@ export class Orchestrator {
         config.getReportingConfig(),
         config.getAiConfig(),
         config.getMultiIntentConfig(),
+        config.getRetryConfig(),
       ]);
 
     // --- Attachments and normalisation ------------------------------------
@@ -160,7 +175,13 @@ export class Orchestrator {
     });
 
     // --- Idempotency: claim BEFORE any side effect (FR-070) ---------------
-    const claim = await claimForProcessing(this.deps.processingStore, email, processingId, this.now());
+    const claim = await claimForProcessing(
+      this.deps.processingStore,
+      email,
+      processingId,
+      this.now(),
+      retryConfig.claimLeaseMinutes,
+    );
     if (claim.kind === 'duplicate') {
       log.info('Duplicate message; processing stopped', { stage: 'Guard', outcome: 'DUPLICATE' });
       return {
@@ -173,6 +194,8 @@ export class Orchestrator {
         promptVersion: null,
       };
     }
+
+    await this.deps.processingStore.updateStatus(processingId, 'Classifying');
 
     // --- Guards: loop prevention and owner suppression ---------------------
     const outboundCount = await this.deps.processingStore.countOutboundForConversation(email.conversationId);
@@ -306,6 +329,8 @@ export class Orchestrator {
       humanReviewReason: decision.humanReviewReason ?? undefined,
       selectedAction: decision.actionPlan.map((a) => a.actionType).join(','),
     });
+
+    await this.deps.processingStore.updateStatus(processingId, TERMINAL_STATUS[decision.outcome]);
 
     return { processingId, decision, normalisedEmail: email, classificationLatencyMs: latencyMs, promptVersion };
   }

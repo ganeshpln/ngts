@@ -54,8 +54,24 @@ export interface ProcessingStore {
   countOutboundForConversation(conversationId: string): Promise<number>;
 }
 
-/** Only these states may be re-entered by a replay; every other state short-circuits (FR-072). */
-const RESUMABLE: ReadonlySet<ProcessingStatus> = new Set<ProcessingStatus>(['Claimed', 'Failed']);
+/**
+ * Which states a replay may re-enter (FR-072).
+ *
+ * `Failed` is always resumable. `Claimed` is ambiguous - it means either "another execution is
+ * working on this right now" or "an execution crashed and left an orphan". A LEASE separates the
+ * two: inside the lease the row is in-flight and the replay is a duplicate; past it the row is an
+ * orphan and the replay may take over. Without this, two concurrent Power Automate deliveries would
+ * both see `Claimed` and both proceed.
+ */
+export const DEFAULT_CLAIM_LEASE_MINUTES = 15;
+
+function isResumable(record: ProcessingRecord, now: Date, leaseMinutes: number): boolean {
+  if (record.status === 'Failed') return true;
+  if (record.status !== 'Claimed') return false;
+  const claimedAt = new Date(record.createdDate).getTime();
+  if (Number.isNaN(claimedAt)) return false;
+  return (now.getTime() - claimedAt) / 60_000 > leaseMinutes;
+}
 
 export function secondaryKeyOf(email: NormalisedEmail): { bodyHash: string; senderEmail: string; subject: string } {
   return { bodyHash: email.bodyHash, senderEmail: email.senderEmail, subject: email.subject };
@@ -66,10 +82,11 @@ export async function claimForProcessing(
   email: NormalisedEmail,
   processingId: string,
   now: Date,
+  leaseMinutes: number = DEFAULT_CLAIM_LEASE_MINUTES,
 ): Promise<ClaimOutcome> {
   const existing = await store.findByInternetMessageId(email.internetMessageId);
   if (existing) {
-    return RESUMABLE.has(existing.status)
+    return isResumable(existing, now, leaseMinutes)
       ? { kind: 'resumable', existing }
       : { kind: 'duplicate', existing, matchedOn: 'internetMessageId' };
   }
@@ -102,7 +119,7 @@ export async function claimForProcessing(
   // path that makes concurrent Power Automate retries safe.
   const winner = await store.findByInternetMessageId(email.internetMessageId);
   if (winner) {
-    return RESUMABLE.has(winner.status)
+    return isResumable(winner, now, leaseMinutes)
       ? { kind: 'resumable', existing: winner }
       : { kind: 'duplicate', existing: winner, matchedOn: 'internetMessageId' };
   }

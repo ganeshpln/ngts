@@ -163,6 +163,7 @@ export interface RetryConfig {
   readonly maxDelayMs: number;
   readonly jitter: string;
   readonly sweepIntervalMinutes: number;
+  readonly claimLeaseMinutes: number;
   readonly dependencies: Readonly<Record<string, { readonly maxAttempts: number; readonly timeoutMs: number }>>;
 }
 

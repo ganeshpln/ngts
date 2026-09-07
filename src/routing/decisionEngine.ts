@@ -92,6 +92,9 @@ function preflightHumanReview(input: DecisionInput): { reason: HumanReviewReason
   if (scenario.scenarioId === 'SC-99') {
     return { reason: 'HIL-07', warning: 'Email could not be matched to any of the twelve business scenarios.' };
   }
+  if (classification.injectionSuspected === true) {
+    return { reason: 'HIL-09', warning: 'Content resembling a prompt-injection attempt was detected.' };
+  }
   if (classification.requiresHumanReview) {
     return { reason: 'HIL-01', warning: 'The classifier itself requested human review.' };
   }
@@ -113,16 +116,33 @@ function preflightHumanReview(input: DecisionInput): { reason: HumanReviewReason
   if (scenario.requiresProgram && programResolution.program === 'UNKNOWN' && programResolution.conflicting) {
     return { reason: 'HIL-03', warning: 'The email refers to both FIT and FLO; the programme cannot be determined.' };
   }
-  if (classification.injectionSuspected === true) {
-    return { reason: 'HIL-09', warning: 'Content resembling a prompt-injection attempt was detected.' };
-  }
-
   const missing = findMissingRequiredEntities(scenario.scenarioId, classification.extractedEntities);
   if (missing.length > 0) {
     return { reason: 'HIL-06', warning: `Required information is missing: ${missing.join(', ')}.` };
   }
 
   return null;
+}
+
+/**
+ * BRD section 6 Scenarios 1 and 2: the troubleshooting template is the FIRST contact, and the
+ * programme owner is involved only when the issue persists or the sender supplies a screenshot or
+ * GPID. Forwarding every first-contact email to the owner would defeat the point of the
+ * troubleshooting response.
+ *
+ * REQUIREMENT GAP GAP-010 / Q-09: the BRD gives no detection rule or waiting period for "the issue
+ * persists", so the rule ships DISABLED and only the two objectively detectable triggers
+ * (screenshot attached, GPID supplied) are implemented.
+ */
+export function shouldEscalateToOwner(scenario: ScenarioConfig, input: DecisionInput): boolean {
+  const rule = scenario.escalationRule;
+  if (!rule?.enabled || rule.escalateTo !== 'PROGRAM_OWNER') return false;
+
+  const triggers = new Set(rule.escalateWhen);
+  if (triggers.has('gpidProvided') && input.classification.extractedEntities.gpid) return true;
+  if (triggers.has('screenshotAttached') && input.email.attachments.some((a) => a.isScreenshot)) return true;
+  // 'senderConfirmsIssuePersists' is deliberately not implemented - see GAP-010.
+  return false;
 }
 
 function buildPlanForRule(
@@ -151,14 +171,22 @@ function buildPlanForRule(
           warnings.push(`SendResponse omitted: ${templateResult.error.detail ?? templateResult.error.kind}`);
           break;
         }
-        const rendered = renderTemplate(templateResult.value, {
+        // The renderer rejects any variable the template does not declare (BRD section 16), so the
+        // caller offers the available values and lets the template's own allow-list select from them.
+        const available: Record<string, string | null> = {
           originalSubject: input.email.subject,
           senderFirstName: input.email.senderName.split(' ')[0] ?? null,
           learnerName: input.classification.extractedEntities.learnerName,
           program: input.programResolution.program,
           newEmail: input.classification.extractedEntities.email,
           ownerName: routing.ownerName,
-        });
+        };
+        const values: Record<string, string | null> = {};
+        for (const name of templateResult.value.allowedVariables) {
+          if (name in available) values[name] = available[name] ?? null;
+        }
+
+        const rendered = renderTemplate(templateResult.value, values);
         if (!rendered.ok) {
           warnings.push(`SendResponse omitted: template render rejected (${rendered.error.kind}).`);
           break;
@@ -334,9 +362,19 @@ export function decide(input: DecisionInput): Decision {
       const additionalScenario = input.scenarios.find((s) => s.scenarioId === additionalScenarioId);
       if (!additionalScenario) continue;
 
+      // The primary programme is MEC_CGR (Schoox), which says nothing about the FIT/FLO issue
+      // riding along with it. Resolving the secondary route as UNKNOWN lets the BRD's own fallback
+      // (Rule R-1, both owners) apply rather than guessing FIT or FLO.
+      const secondaryProgram =
+        additionalScenario.programScope === 'FIT_FLO' &&
+        input.programResolution.program !== 'FIT' &&
+        input.programResolution.program !== 'FLO'
+          ? 'UNKNOWN'
+          : input.programResolution.program;
+
       const secondaryRouting = resolveRouting(input.routingRules, {
         scenarioId: additionalScenarioId,
-        program: input.programResolution.program,
+        program: secondaryProgram,
         subIntent: null,
       });
       if (!secondaryRouting.resolved || secondaryRouting.recipients.length === 0) {
@@ -352,6 +390,19 @@ export function decide(input: DecisionInput): Decision {
         scenarioId: additionalScenarioId,
       });
       warnings.push(`Multi-intent: also routed to the ${additionalScenarioId} owner (Rule R-2).`);
+    }
+  }
+
+  if (shouldEscalateToOwner(input.scenario, input) && primaryRouting.recipients.length > 0) {
+    if (!plan.some((item) => item.actionType === 'RouteToProgramOwner')) {
+      plan.push({
+        sequence: plan.length + 1,
+        actionType: 'RouteToProgramOwner',
+        parameters: { toRecipients: primaryRouting.recipients },
+        resolvedDestination: primaryRouting.recipients.join('; '),
+        scenarioId: input.scenario.scenarioId,
+      });
+      warnings.push('Escalation criteria met; the message was also routed to the programme owner.');
     }
   }
 
@@ -376,6 +427,23 @@ export function decide(input: DecisionInput): Decision {
   if (validation.rejected.length > 0) {
     const reasons = validation.rejected.map((r) => `${r.verdict.code}: ${r.verdict.reason}`);
     return escalation(input, 'HIL-09', [...warnings, ...reasons]);
+  }
+
+  // A plan that has been reduced to housekeeping only - typically MarkAsRead, because the reply and
+  // the move were both omitted for want of configuration - would silently mark the email read and
+  // leave nobody acting on it. That is worse than escalating, so it escalates.
+  const SUBSTANTIVE: readonly ActionType[] = [
+    'SendResponse', 'ForwardEmail', 'RouteToProgramOwner', 'RouteToChangeRequest', 'MoveEmail', 'DeleteEmail',
+  ];
+  const plannedSubstantive = (routing: readonly ActionType[]) => routing.some((a) => SUBSTANTIVE.includes(a));
+  const intendedSubstantive = plannedSubstantive((primaryRouting.rule?.actionPlan ?? []) as readonly ActionType[]);
+  const actualSubstantive = validation.approved.some((item) => SUBSTANTIVE.includes(item.actionType));
+
+  if (intendedSubstantive && !actualSubstantive) {
+    return escalation(input, 'HIL-04', [
+      ...warnings,
+      'Every substantive action was omitted; only housekeeping remained, so the email needs a human.',
+    ]);
   }
 
   if (validation.approved.length === 0) {

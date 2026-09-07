@@ -44,6 +44,8 @@
     "maxDelayMs": 32000,
     "jitter": "full",
     "sweepIntervalMinutes": 15,
+    "claimLeaseMinutes": 15,
+    "$comment_claimLeaseMinutes": "How long a Claimed row is treated as in-flight. A replay arriving inside the lease is a duplicate; one arriving after it is a resumable orphan from a crashed execution.",
     "dependencies": {
       "graphRead":     { "maxAttempts": 3, "timeoutMs": 30000 },
       "graphWrite":    { "maxAttempts": 3, "timeoutMs": 30000 },
