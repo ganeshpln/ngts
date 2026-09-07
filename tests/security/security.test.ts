@@ -428,6 +428,7 @@ describe('T-11 the shipped configuration is safe by default', () => {
       await store.getAiConfig(),
       await store.getReportingConfig(),
     ]);
-    expect(serialised).not.toMatch(/"(password|clientSecret|apiKey|api_key|token|connectionString)"\s*:/i);
+    // The pattern names what must NOT appear; it is not itself a credential.
+    expect(serialised).not.toMatch(/"(password|clientSecret|apiKey|api_key|token|connectionString)"\s*:/i); // secret-scan:ignore
   });
 });

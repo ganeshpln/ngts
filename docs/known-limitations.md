@@ -21,6 +21,10 @@ environment. So:
 - **The Power Automate flows are designed, not built.** `infrastructure/power-platform/flows/`
   specifies them precisely; someone must construct them.
 - **The Copilot Studio agent is configured, not deployed.**
+- **The Bicep template has not been compiled.** No Azure CLI is available in this build
+  environment, so `main.bicep` has been reviewed for structure but never run through
+  `az bicep build`. The CI pipeline compiles it on every push — treat the first CI run as the
+  first real syntax check.
 
 Everything above is a DEV smoke-test item in `docs/production-checklist.md`.
 

@@ -171,7 +171,9 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
     allowBlobPublicAccess: false
-    allowSharedKeyAccess: true
+    // Identity-based access only: the Functions host reaches storage with the app's managed
+    // identity, so no account key is ever placed in an app setting (NFR-009, Rule 4).
+    allowSharedKeyAccess: false
   }
 }
 
@@ -205,7 +207,9 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
         { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'node' }
         { name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '~22' }
-        { name: 'AzureWebJobsStorage', value: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storage.listKeys().keys[0].value}' }
+        // Identity-based storage connection - no key, no connection string (NFR-010).
+        { name: 'AzureWebJobsStorage__accountName', value: storage.name }
+        { name: 'AzureWebJobsStorage__credential', value: 'managedidentity' }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
         // Endpoints and identifiers only. No credential: Azure OpenAI and Dataverse both
         // authenticate with the Function App's managed identity (NFR-009, Rule 4).
@@ -257,6 +261,8 @@ resource functionAuth 'Microsoft.Web/sites/config@2023-12-01' = {
 var cognitiveServicesOpenAiUser = 'a97b65f3-24c7-4388-baec-2e87135dc908'
 var keyVaultSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6'
 var monitoringMetricsPublisher = '3913510d-42f4-4e42-8a64-420c390055eb'
+var storageBlobDataOwner = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+var storageQueueDataContributor = '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
 
 resource openAiRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: openAi
@@ -264,6 +270,27 @@ resource openAiRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   properties: {
     // "User" not "Contributor": the service infers, it does not manage deployments.
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAiUser)
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// The Functions host needs these to use the storage account without a shared key.
+resource storageBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: storage
+  name: guid(storage.id, functionApp.id, storageBlobDataOwner)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataOwner)
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource storageQueueRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: storage
+  name: guid(storage.id, functionApp.id, storageQueueDataContributor)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageQueueDataContributor)
     principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
   }

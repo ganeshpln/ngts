@@ -26,11 +26,12 @@ const SENSITIVE_KEYS = new Set([
   'ccrecipients',
   'errormessage',
   'rawoutput',
+  // These are the names of fields to REDACT, not credentials.
   'password',
   'token',
   'secret',
   'authorization',
-  'apikey',
+  'apikey', // secret-scan:ignore
 ]);
 
 /** One-way, stable within a deployment: lets telemetry correlate without storing the value. */

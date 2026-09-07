@@ -71,10 +71,13 @@ jobs:
         run: |
           set -euo pipefail
           patterns='(client_secret|clientSecret|api[_-]?key|AccountKey=|BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY|password"\s*:\s*"[^"]|SharedAccessSignature)'
-          if grep -rInE "$patterns" src config prompts infrastructure tests \
-               --exclude-dir=node_modules >/dev/null 2>&1; then
+          # Lines carrying an explicit "secret-scan:ignore" marker are reviewed exceptions - a
+          # redaction key list and a test assertion that names the forbidden field names.
+          hits=$(grep -rInE "$patterns" src config prompts infrastructure tests \
+                   --exclude-dir=node_modules | grep -v 'secret-scan:ignore' || true)
+          if [ -n "$hits" ]; then
             echo "::error::Credential-shaped content detected. See NFR-009 and Rule 4."
-            grep -rInE "$patterns" src config prompts infrastructure tests --exclude-dir=node_modules || true
+            echo "$hits"
             exit 1
           fi
           echo "No credential-shaped content found."
