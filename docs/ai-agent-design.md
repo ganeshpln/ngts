@@ -63,8 +63,22 @@ Five prompts, separately versioned, externalised under `/prompts` (NFR-017).
 | 4 | `response_selector` | Scenario + programme + senderType + template catalogue | proposed templateId | Only when the scenario permits sending |
 | 5 | `routing_decision_validator` | Full proposed decision + email summary | agree / disagree + concern | Medium band, and all multi-intent cases |
 
-Prompt 5 is a **second-opinion check**, not an authority: a disagreement demotes the item to human
-review; an agreement never promotes an item past a gate it failed.
+Prompt 5 is a **second-opinion check**, not an authority. The asymmetry is what makes it safe to
+have a model call in this position:
+
+- **Disagreement demotes, at any band.** Even a high-confidence classification the validator reads
+  differently goes to a human. That is exactly the case worth a person's minute.
+- **Agreement never promotes.** It cannot raise a band, authorise a send from an inactive template,
+  approve a delete below the required band, or move an item past any gate it has already failed.
+- **Absence is never agreement.** An unreachable validator, a malformed response, or a missing
+  `agrees` field all count as "not consulted", which fails safe.
+
+So a false *disagree* costs a little human time; a false *agree* changes nothing that was not
+already permitted.
+
+**Multi-intent always requires an explicit agreement**, whatever the confidence band. Two genuine
+intents can involve two different teams, and high confidence in the *primary* label is not
+confidence that acting on it alone is right.
 
 ### Versioning
 Each file carries YAML front-matter with `name`, `version` (semver), `schema`, `owner` and

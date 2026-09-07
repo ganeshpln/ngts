@@ -21,6 +21,11 @@ import {
   renderSystemPrompt,
   senderDomainType,
 } from '../classification/promptBuilder.js';
+import {
+  consultRoutingValidator,
+  shouldConsultValidator,
+  type ValidatorVerdict,
+} from '../classification/routingValidator.js';
 import { extractJsonObject, validateClassification } from '../classification/schemaValidator.js';
 import type { ModelClient } from '../classification/modelClient.js';
 import { newProcessingId } from '../common/hash.js';
@@ -277,7 +282,13 @@ export class Orchestrator {
 
     const programResolution = resolveProgram(effectiveClassification, effectiveScenario, thresholds);
     const entityValidation = validateEntities(effectiveClassification.extractedEntities);
-    const corroboration = corroborate(email, effectiveScenario, scenarios, thresholds.corroboration.minimumSignalMatches);
+    const corroboration = corroborate(
+      email,
+      effectiveScenario,
+      scenarios,
+      thresholds.corroboration.minimumSignalMatches,
+      (effectiveClassification.secondaryIntents ?? []).map((s) => s.scenarioId),
+    );
 
     const confidence = assessConfidence(
       {
@@ -293,6 +304,49 @@ export class Orchestrator {
       thresholds,
       effectiveScenario,
     );
+
+    // --- Second opinion (prompt 5) ----------------------------------------
+    // Consulted only where it can change the outcome: medium band, or multi-intent. A LOW-band item
+    // is already bound for a human, so asking would cost a model call and change nothing.
+    let validatorVerdict: ValidatorVerdict | null = null;
+    if (
+      !suppression &&
+      shouldConsultValidator(confidence.band, multiIntentResolution.multiIntent, {
+        onMediumBand: thresholds.corroboration.consultValidatorOnMediumBand,
+        onMultiIntent: thresholds.corroboration.consultValidatorOnMultiIntent,
+      })
+    ) {
+      const validatorPromptFile = (aiConfig.prompts.routingDecisionValidator?.file ?? 'prompts/routing-validator.md')
+        .replace(/^prompts\//, '');
+
+      validatorVerdict = await consultRoutingValidator({
+        model: this.deps.model,
+        promptLoader: this.deps.promptLoader,
+        promptFile: validatorPromptFile,
+        maxTokens: aiConfig.maxTokens,
+        temperature: aiConfig.temperature,
+        logger: log,
+        context: {
+          email,
+          scenarioId: effectiveScenario.scenarioId,
+          scenarioName: effectiveScenario.scenarioName,
+          program: programResolution.program,
+          subIntent: effectiveClassification.subIntent ?? null,
+          multiIntent: multiIntentResolution.multiIntent,
+          confidence: confidence.effectiveConfidence,
+          secondaryIntents: effectiveClassification.secondaryIntents ?? [],
+        },
+      });
+
+      log.info('Routing validator consulted', {
+        stage: 'Classify',
+        scenarioId: effectiveScenario.scenarioId,
+        confidenceBand: confidence.band,
+        aiStatus: validatorVerdict === null ? 'not-consulted' : validatorVerdict.agrees ? 'agrees' : 'disagrees',
+        aiLatencyMs: validatorVerdict?.latencyMs,
+        promptVersion: validatorVerdict?.promptVersion,
+      });
+    }
 
     const region = resolveRegion(regions, reporting, { email });
 
@@ -313,10 +367,7 @@ export class Orchestrator {
       safety,
       regionCode: region.regionCode,
       suppressionReason: suppression,
-      // The routing_decision_validator is a separate model call wired at the API layer; when it has
-      // not been consulted, medium-band multi-intent items fail the corroboration gate and go to a
-      // human, which is the safe default.
-      validatorAgrees: null,
+      validatorVerdict,
     });
 
     log.info('Decision produced', {

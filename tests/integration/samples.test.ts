@@ -31,6 +31,7 @@ interface SampleFile {
   message: RawEmail;
   threadContext?: ThreadMessage[];
   scriptedClassification?: unknown;
+  scriptedRoutingValidation?: unknown;
 }
 
 /** Mirrors the CLI: any call is a defect, so shadow mode is demonstrated rather than asserted. */
@@ -64,7 +65,15 @@ async function runSample(file: string) {
   const orchestrator = new Orchestrator({
     config,
     model: new ScriptedModelClient(
-      new Map([['email_intent_classifier', JSON.stringify(sample.scriptedClassification)]]),
+      (() => {
+        const scripted = new Map<string, string>([
+          ['email_intent_classifier', JSON.stringify(sample.scriptedClassification)],
+        ]);
+        if (sample.scriptedRoutingValidation !== undefined) {
+          scripted.set('routing_decision_validator', JSON.stringify(sample.scriptedRoutingValidation));
+        }
+        return scripted;
+      })(),
     ),
     processingStore: new InMemoryProcessingStore(),
     promptLoader: new PromptLoader(),
@@ -150,6 +159,15 @@ describe('what the samples demonstrate', () => {
     const { decision } = await runSample('06-sc03-ambiguous.json');
     expect(decision.outcome).toBe('HUMAN_REVIEW');
     expect(decision.humanReviewReason).toBe('HIL-04');
+  });
+
+  it('dual-routes the multi-intent email only because the validator agrees', async () => {
+    const { decision } = await runSample('08-sc07-plus-fit-issue.json');
+    const destinations = decision.actionPlan.map((a) => a.resolvedDestination).join(' ');
+    expect(decision.multiIntentResolution.ruleApplied).toBe('MI-SCHOOX-PLUS');
+    expect(destinations).toContain('amy.fischer@pepsico.com');
+    expect(destinations).toContain('jordan.beahrs@pepsico.com');
+    expect(destinations).toContain('josh.baxter@pepsico.com');
   });
 
   it('ignores an injected address even when the model was fully fooled', async () => {

@@ -449,10 +449,24 @@ Enforced properties:
   tuned tighter or looser independently of judgement-heavy scenarios such as SC-09.
 - Destructive actions (`DeleteEmail`) always require the High band regardless of override (AD-005).
 
-**Medium-band corroboration** (AD-006): the deterministic layer independently checks the
-classification against configured scenario signals and structural evidence. Agreement promotes the
-item to auto-action; disagreement demotes it to human review. This gives the medium band a
-defined, testable meaning rather than leaving "restricted automation" undefined.
+**Medium-band confirmation** (AD-006): a medium-band item may be actioned only with independent
+confirmation, from **either** of two sources:
+
+1. **Deterministic corroboration** - the scenario's configured signals are present in the email and
+   no other scenario's evidence contests them; or
+2. **An explicit agreement** from the `routing_decision_validator` prompt (prompt 5).
+
+They are alternatives, not cumulative requirements. An item usually reaches the medium band
+*because* corroboration failed, so requiring corroboration again would make the band dead and leave
+"restricted automation" meaning "always human review". Neither source available means human review.
+
+**Multi-intent always requires the validator's agreement**, at any band (AD-024): two genuine
+intents can involve two different teams, and confidence in the primary label says nothing about
+whether acting on it alone is right.
+
+A validator *disagreement* demotes at any band; a validator *agreement* never promotes an item past
+a gate it has already failed (an inactive template, a delete below the high band, a disabled
+capability).
 
 ---
 

@@ -32,14 +32,25 @@ export function corroborate(
   chosen: ScenarioConfig,
   allScenarios: readonly ScenarioConfig[],
   minimumSignalMatches: number,
+  /**
+   * Scenarios the classifier already identified as secondary intents. Their signals are EXPECTED to
+   * be present, so they are not treated as competing evidence - see below.
+   */
+  identifiedSecondaryScenarioIds: readonly string[] = [],
 ): CorroborationResult {
   const haystack = `${email.subject}\n${email.body}`.toLowerCase();
   const matchedSignals = countSignals(chosen, haystack);
 
   // Scenarios with materially more signal than the chosen one. Their presence does not overturn
   // the model, but it means the evidence is contested and a medium-band item should not auto-act.
+  //
+  // A scenario the classifier ALREADY declared as a secondary intent is excluded. On a genuine
+  // multi-intent email the secondary intent legitimately carries signal - counting it as evidence
+  // against the primary would fail corroboration on exactly the emails multi-intent handling exists
+  // to serve.
+  const expectedSecondary = new Set(identifiedSecondaryScenarioIds);
   const competingScenarios = allScenarios
-    .filter((s) => s.scenarioId !== chosen.scenarioId && s.keywords.length > 0)
+    .filter((s) => s.scenarioId !== chosen.scenarioId && !expectedSecondary.has(s.scenarioId) && s.keywords.length > 0)
     .map((s) => ({ scenarioId: s.scenarioId, count: countSignals(s, haystack).length }))
     .filter((s) => s.count > matchedSignals.length)
     .map((s) => s.scenarioId);

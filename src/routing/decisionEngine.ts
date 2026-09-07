@@ -10,6 +10,7 @@
 
 import { validatePlan, type ValidationContext } from '../actions/actionValidator.js';
 import { mediumBandPermitsAutomation } from '../classification/confidence.js';
+import type { ValidatorVerdict } from '../classification/routingValidator.js';
 import { findMissingRequiredEntities } from '../classification/entityValidator.js';
 import type {
   ActionPlanItem,
@@ -52,7 +53,11 @@ export interface DecisionInput {
   readonly regionCode: string;
   readonly suppressionReason: SuppressionReason | null;
   /** Result of the routing_decision_validator prompt, where it was called. */
-  readonly validatorAgrees: boolean | null;
+  /**
+   * The routing_decision_validator's second opinion (prompt 5), or null when it was not consulted.
+   * Disagreement demotes to human review; agreement never promotes past a gate already failed.
+   */
+  readonly validatorVerdict: ValidatorVerdict | null;
 }
 
 function escalation(
@@ -95,6 +100,19 @@ function preflightHumanReview(input: DecisionInput): { reason: HumanReviewReason
   if (classification.injectionSuspected === true) {
     return { reason: 'HIL-09', warning: 'Content resembling a prompt-injection attempt was detected.' };
   }
+  // The second opinion disagrees. This demotes at ANY band - a HIGH-confidence classification the
+  // validator reads differently is exactly the case worth a human's minute (docs/ai-agent-design.md
+  // section 3). Agreement, by contrast, never promotes anything.
+  if (input.validatorVerdict && !input.validatorVerdict.agrees) {
+    const concern = input.validatorVerdict.concern ?? 'no reason given';
+    const suggestion = input.validatorVerdict.suggestedScenarioId
+      ? ` It suggested ${input.validatorVerdict.suggestedScenarioId}, which is advisory only.`
+      : '';
+    return {
+      reason: 'HIL-02',
+      warning: `The routing validator disagreed with the proposed decision: ${concern}${suggestion}`,
+    };
+  }
   if (classification.requiresHumanReview) {
     return { reason: 'HIL-01', warning: 'The classifier itself requested human review.' };
   }
@@ -106,10 +124,32 @@ function preflightHumanReview(input: DecisionInput): { reason: HumanReviewReason
   }
   if (
     confidence.band === 'MEDIUM' &&
-    !mediumBandPermitsAutomation(confidence, multiIntentResolution.multiIntent, input.validatorAgrees, input.thresholds)
+    !mediumBandPermitsAutomation(
+      confidence,
+      multiIntentResolution.multiIntent,
+      input.validatorVerdict?.agrees ?? null,
+      input.thresholds,
+    )
   ) {
     return { reason: 'HIL-01', warning: 'Medium-confidence classification was not corroborated by the deterministic check.' };
   }
+  // Multi-intent needs the second opinion at ANY band, not just medium. Two genuine intents can
+  // involve two different teams, and no deterministic signal tells you which the sender primarily
+  // needs - so high confidence in the PRIMARY label is not confidence that acting on it alone is
+  // right. An unreachable validator therefore means a human, never an assumed agreement.
+  if (
+    multiIntentResolution.multiIntent &&
+    input.thresholds.corroboration.requireValidatorAgreementForMultiIntent &&
+    input.validatorVerdict?.agrees !== true
+  ) {
+    return {
+      reason: 'HIL-02',
+      warning: input.validatorVerdict
+        ? 'The routing validator did not agree the multi-intent decision.'
+        : 'Multi-intent email with no second opinion available; the routing validator was not consulted or could not be reached.',
+    };
+  }
+
   // HIL-03: the scenario cannot proceed without a programme and the evidence did not establish one.
   // Note this fires ONLY when the scenario declares requiresProgram - for most FIT/FLO scenarios the
   // BRD's own fallback (route to both owners) is the answer, and escalating would override it.

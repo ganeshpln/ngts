@@ -1,7 +1,7 @@
 # Test Matrix
 ## PEP Passport SPA Box Automation – Agentic (WIT 504)
 
-**206 automated tests, all passing.** Run with `npm test`.
+**264 automated tests, all passing.** Run with `npm test`.
 
 | Suite | File | Tests | Purpose |
 |---|---|---|---|
@@ -11,6 +11,9 @@
 | Security | `tests/security/security.test.ts` | 39 | The threat model in `docs/security-design.md` §3 |
 | Integration — pipeline | `tests/integration/pipeline.test.ts` | 22 | Duplicates, concurrency, AI failure, execution failure, retry, prompt assembly |
 | Integration — API | `tests/integration/api.test.ts` | 11 | HTTP contracts and fail-closed health |
+| Integration — validator | `tests/integration/routingValidatorWiring.test.ts` | 15 | Prompt 5: disagreement demotes, agreement never promotes, absence fails safe |
+| Integration — samples | `tests/integration/samples.test.ts` | 24 | The shadow-run samples stay valid and never reach a mailbox |
+| Unit — validator | `tests/unit/routingValidator.test.ts` | 16 | Verdict parsing and when the validator is consulted |
 
 The model is scripted in every suite, so the tests assert on the **deterministic** behaviour — which
 is what the controls actually depend on — and CI is offline, free and reproducible.

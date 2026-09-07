@@ -1,5 +1,5 @@
 {
-  "description": "Multi-intent: a Schoox question that also raises a separate FIT access problem. Both routes apply (BRD Scenario 7 exclusion rule).",
+  "description": "Multi-intent: a Schoox question that also raises a separate FIT access problem. Both routes apply (BRD Scenario 7 exclusion rule), but only because the routing validator agrees - multi-intent always needs the second opinion.",
   "message": {
     "id": "AAMkAG-sample-08",
     "internetMessageId": "<sample-08@pepsico.com>",
@@ -9,8 +9,16 @@
       "contentType": "text",
       "content": "Two things please. Where is the MEC capstone deck on Schoox for workweek 5? Also I am unable to access FIT at all this morning - the authenticator never sends me a code and I cannot sign in."
     },
-    "from": { "address": "sara.oduya@pepsico.com", "name": "Sara Oduya" },
-    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "from": {
+      "address": "sara.oduya@pepsico.com",
+      "name": "Sara Oduya"
+    },
+    "toRecipients": [
+      {
+        "address": "spa@pepsico.com",
+        "name": "SPA Mailbox"
+      }
+    ],
     "ccRecipients": [],
     "receivedDateTime": "2026-09-04T08:40:00Z",
     "hasAttachments": false,
@@ -22,18 +30,43 @@
     "scenarioId": "SC-07",
     "scenarioName": "Schoox / MEC / CGR",
     "program": "MEC_CGR",
-    "programEvidence": [{ "source": "businessRule" }],
+    "programEvidence": [
+      {
+        "source": "businessRule"
+      }
+    ],
     "intent": "schoox_mec_cgr",
     "subIntent": null,
     "confidence": 0.92,
     "senderType": "learner",
     "requiresHumanReview": false,
     "multiIntent": true,
-    "secondaryIntents": [{ "scenarioId": "SC-02", "confidence": 0.89, "subIntent": null }],
-    "extractedEntities": { "learnerName": null, "gpid": null, "email": null, "program": null, "island": null, "week": "workweek 5", "errorMessage": null },
+    "secondaryIntents": [
+      {
+        "scenarioId": "SC-02",
+        "confidence": 0.89,
+        "subIntent": null
+      }
+    ],
+    "extractedEntities": {
+      "learnerName": null,
+      "gpid": null,
+      "email": null,
+      "program": null,
+      "island": null,
+      "week": "workweek 5",
+      "errorMessage": null
+    },
     "missingRequiredInformation": [],
     "reasoningSummary": "Asks where MEC capstone content is on Schoox and separately reports being unable to sign in to FIT.",
     "injectionSuspected": false,
     "languageDetected": "en"
+  },
+  "scriptedRoutingValidation": {
+    "agrees": true,
+    "confidence": 0.87,
+    "concern": null,
+    "suggestedScenarioId": null,
+    "injectionSuspected": false
   }
 }

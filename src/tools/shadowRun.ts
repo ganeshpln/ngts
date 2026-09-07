@@ -45,6 +45,12 @@ interface SampleFile {
   readonly threadContext?: ThreadMessage[];
   /** Used only when no Azure OpenAI deployment is configured. */
   readonly scriptedClassification?: unknown;
+  /**
+   * Scripted routing_decision_validator verdict (prompt 5), used only when no Azure OpenAI
+   * deployment is configured. Omit it to see the fail-safe path: with no agreement available, a
+   * multi-intent or medium-band email escalates to a human.
+   */
+  readonly scriptedRoutingValidation?: unknown;
 }
 
 /**
@@ -256,11 +262,20 @@ async function buildModelClient(sample: SampleFile): Promise<{ client: ModelClie
     );
   }
 
+  const scripted = new Map<string, string>([
+    ['email_intent_classifier', JSON.stringify(sample.scriptedClassification)],
+  ]);
+  if (sample.scriptedRoutingValidation !== undefined) {
+    scripted.set('routing_decision_validator', JSON.stringify(sample.scriptedRoutingValidation));
+  }
+
   return {
-    client: new ScriptedModelClient(
-      new Map([['email_intent_classifier', JSON.stringify(sample.scriptedClassification)]]),
+    client: new ScriptedModelClient(scripted),
+    source: dim(
+      `scripted from the sample file (AZURE_OPENAI_ENDPOINT not set)${
+        sample.scriptedRoutingValidation === undefined ? '; no validator verdict supplied' : '; includes a validator verdict'
+      }`,
     ),
-    source: dim('scripted from the sample file (AZURE_OPENAI_ENDPOINT not set)'),
   };
 }
 

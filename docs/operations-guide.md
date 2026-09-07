@@ -76,6 +76,19 @@ Transient by nature; the client honours `Retry-After` then backs off. Sustained 
 capacity is undersized — raise `openAiCapacity` in the Bicep parameters. Affected emails go to human
 review, never dropped.
 
+### 3.6a The second model call
+
+Medium-band and multi-intent emails make a **second** model call to the
+`routing_decision_validator` (prompt 5). That roughly doubles the token cost for those emails, and
+adds their latency. It is skipped for LOW-band items, which are already bound for a human, and for
+straightforward high-confidence single-intent mail.
+
+If cost or latency becomes a problem, `corroboration.consultValidatorOnMediumBand` and
+`consultValidatorOnMultiIntent` in the Dataverse `Configuration` table turn each trigger off
+independently. Be clear about what that buys: with the multi-intent trigger off, multi-intent
+emails have no second opinion to rely on and escalate to a human instead, so you trade model spend
+for reviewer time rather than for risk.
+
 ### 3.7 Tuning confidence thresholds
 Edit `confidence.highThreshold` / `confidence.mediumThreshold` in the Dataverse `Configuration`
 table. Move in steps of 0.05 and watch the human-review rate for a week. Raising a threshold sends

@@ -110,6 +110,8 @@ export interface ThresholdConfig {
     readonly requiredForMediumBand: boolean;
     readonly minimumSignalMatches: number;
     readonly requireValidatorAgreementForMultiIntent: boolean;
+    readonly consultValidatorOnMediumBand: boolean;
+    readonly consultValidatorOnMultiIntent: boolean;
   };
 }
 

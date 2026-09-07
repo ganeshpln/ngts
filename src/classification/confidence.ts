@@ -108,8 +108,23 @@ export function meetsBandForAction(
 }
 
 /**
- * The medium band permits automation only when the deterministic layer independently agrees
- * (AD-006). Without this, "restricted automation" would have no operational meaning.
+ * The medium band permits automation only with INDEPENDENT CONFIRMATION (BRD section 9's
+ * "restricted automation or additional validation", AD-006).
+ *
+ * Confirmation can come from either source, and that is the point:
+ *
+ *  - deterministic corroboration - the configured scenario signals are present and uncontested; or
+ *  - an explicit agreement from the routing_decision_validator (prompt 5).
+ *
+ * Requiring BOTH would make the band dead. An item usually reaches MEDIUM *because* corroboration
+ * failed and the confidence penalty pushed it down, so demanding corroboration as well means no
+ * medium-band item can ever be actioned and the second opinion can never help. Treating them as
+ * alternatives is what gives the band the operational meaning the BRD describes.
+ *
+ * Multi-intent is the exception: it always needs the validator specifically, because deterministic
+ * signals cannot tell you which of two genuine intents the sender primarily needs.
+ *
+ * Neither source available still means a human. Absence of a verdict is never agreement.
  */
 export function mediumBandPermitsAutomation(
   assessment: ConfidenceAssessment,
@@ -118,9 +133,12 @@ export function mediumBandPermitsAutomation(
   thresholds: ThresholdConfig,
 ): boolean {
   if (assessment.band !== 'MEDIUM') return assessment.band === 'HIGH';
-  if (thresholds.corroboration.requiredForMediumBand && !assessment.corroborated) return false;
+
   if (multiIntent && thresholds.corroboration.requireValidatorAgreementForMultiIntent) {
     return validatorAgrees === true;
+  }
+  if (thresholds.corroboration.requiredForMediumBand) {
+    return assessment.corroborated || validatorAgrees === true;
   }
   return true;
 }

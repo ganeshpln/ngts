@@ -39,11 +39,19 @@ export interface HarnessOptions {
   /** Supply a change-request destination, simulating the answer to Q-04 (GAP-003). */
   readonly changeRequestAddress?: string;
   readonly outboundCounts?: Readonly<Record<string, number>>;
+  /**
+   * Scripted routing_decision_validator response. Omit it to simulate the validator being
+   * unreachable, which is the fail-safe path (no agreement, so medium-band multi-intent escalates).
+   * Pass a raw string to simulate a malformed response.
+   */
+  readonly routingValidation?: Record<string, unknown> | string;
   readonly now?: Date;
 }
 
 export interface HarnessResult {
   readonly decision: Decision;
+  /** The scripted model client, so tests can assert WHICH prompts were called. */
+  readonly model: ScriptedModelClient;
   readonly mailbox: RecordingMailbox;
   readonly humanReview: RecordingHumanReview;
   readonly audit: RecordingAudit;
@@ -116,9 +124,18 @@ export async function run(
     store.outboundCounts.set(conversationId, count);
   }
 
-  const model = new ScriptedModelClient(
-    new Map([['email_intent_classifier', JSON.stringify(makeClassification(classification))]]),
-  );
+  const scripted = new Map<string, string>([
+    ['email_intent_classifier', JSON.stringify(makeClassification(classification))],
+  ]);
+  if (options.routingValidation !== undefined) {
+    scripted.set(
+      'routing_decision_validator',
+      typeof options.routingValidation === 'string'
+        ? options.routingValidation
+        : JSON.stringify(options.routingValidation),
+    );
+  }
+  const model = new ScriptedModelClient(scripted);
 
   const orchestrator = new Orchestrator({
     config,
@@ -147,7 +164,7 @@ export async function run(
     shadowMode: decision.outcome === 'SHADOW',
   });
 
-  return { decision, mailbox, humanReview, audit, store, processingId };
+  return { decision, model, mailbox, humanReview, audit, store, processingId };
 }
 
 /** Every mailbox-affecting flag on, shadow mode off - the "fully live" configuration. */
@@ -165,6 +182,24 @@ export function liveWith(extra: Partial<HarnessOptions>): HarnessOptions {
     activateTemplates: [...(LIVE.activateTemplates ?? []), ...(extra.activateTemplates ?? [])],
   };
 }
+
+/** A validator verdict that agrees, for tests that need the second opinion to pass. */
+export const VALIDATOR_AGREES = {
+  agrees: true,
+  confidence: 0.9,
+  concern: null,
+  suggestedScenarioId: null,
+  injectionSuspected: false,
+};
+
+/** A validator verdict that disagrees, with a concern the reviewer would see. */
+export const VALIDATOR_DISAGREES = {
+  agrees: false,
+  confidence: 0.8,
+  concern: 'The email also asks for something that would go to a different team.',
+  suggestedScenarioId: 'SC-03',
+  injectionSuspected: false,
+};
 
 export function actionTypes(decision: Decision): string[] {
   return decision.actionPlan.map((a) => a.actionType);

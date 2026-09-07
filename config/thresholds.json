@@ -42,6 +42,9 @@
     "$comment": "AD-006. Gives the medium band a defined, testable meaning rather than leaving 'restricted automation' undefined.",
     "requiredForMediumBand": true,
     "minimumSignalMatches": 1,
-    "requireValidatorAgreementForMultiIntent": true
+    "requireValidatorAgreementForMultiIntent": true,
+    "consultValidatorOnMediumBand": true,
+    "consultValidatorOnMultiIntent": true,
+    "$comment_consultValidator": "Prompt 5 (routing_decision_validator) is a second model call. It is skipped for LOW-band items, which are already going to a human, so it costs nothing there. Set either flag to false to disable that trigger; with both false the validator is never called and medium-band multi-intent items escalate for want of agreement."
   }
 }

@@ -132,6 +132,49 @@ export function buildClassifierUserMessage(ctx: UserMessageContext): string {
   ].join('\n');
 }
 
+export interface ValidatorPromptContext {
+  readonly email: NormalisedEmail;
+  readonly scenarioId: string;
+  readonly scenarioName: string;
+  readonly program: string;
+  readonly subIntent: string | null;
+  readonly multiIntent: boolean;
+  readonly confidence: number;
+  readonly secondaryIntents: readonly { readonly scenarioId: string; readonly confidence: number }[];
+}
+
+/**
+ * User message for the routing_decision_validator (prompt 5).
+ *
+ * The proposed decision goes in the instruction lane; the email stays inside the content
+ * delimiters, sanitised, exactly as it does for the classifier. A validator that could be steered
+ * by the email it is reviewing would be worse than no validator at all.
+ */
+export function buildValidatorUserMessage(ctx: ValidatorPromptContext): string {
+  const secondary =
+    ctx.secondaryIntents.length === 0
+      ? '(none)'
+      : ctx.secondaryIntents.map((s) => `${s.scenarioId} (${s.confidence.toFixed(2)})`).join(', ');
+
+  return [
+    'Proposed decision:',
+    `  scenarioId:  ${ctx.scenarioId} (${ctx.scenarioName})`,
+    `  programme:   ${ctx.program}`,
+    `  subIntent:   ${ctx.subIntent ?? 'none'}`,
+    `  multiIntent: ${ctx.multiIntent}`,
+    `  confidence:  ${ctx.confidence.toFixed(2)}`,
+    `  secondary intents: ${secondary}`,
+    '',
+    CONTENT_START,
+    `Subject: ${sanitiseContent(ctx.email.subject)}`,
+    '',
+    sanitiseContent(ctx.email.body),
+    CONTENT_END,
+    '',
+    'Review the proposed decision above. Return only the JSON object.',
+  ].join('\n');
+}
+
 export function renderSystemPrompt(
   prompt: PromptFile,
   substitutions: Readonly<Record<string, string>>,

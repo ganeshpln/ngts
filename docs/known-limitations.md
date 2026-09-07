@@ -60,6 +60,13 @@ corroboration in `src/classification/confidence.ts` compensate, but the threshol
 suggested starting values, not empirically derived. **They must be tuned against the shadow-mode
 pilot** — using them untuned is the single most likely cause of early misbehaviour.
 
+### 3.2a Medium-band and multi-intent emails cost two model calls
+
+The `routing_decision_validator` is a second inference per qualifying email. It is what makes the
+medium band usable and what stops a confident single-label reading from silently deciding a
+two-team email, but it is real spend and real latency. Both triggers are configurable, and turning
+one off converts model cost into reviewer time — those emails then escalate.
+
 ### 3.3 Attachment content is never read
 Screenshots are detected but not read. The BRD requires detection only (FR-080/081), so a learner
 whose entire problem is visible in a screenshot and absent from the body will classify weakly and

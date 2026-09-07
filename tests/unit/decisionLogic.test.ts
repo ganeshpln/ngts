@@ -291,10 +291,24 @@ describe('confidence model (BRD section 9)', () => {
     expect(meetsBandForAction('MoveEmail', 'MEDIUM', thresholds)).toBe(true);
   });
 
-  it('blocks medium-band automation without corroboration', async () => {
+  it('blocks medium-band automation with neither corroboration nor an agreed second opinion', async () => {
     const thresholds = await store.getThresholds();
     const uncorroborated = { rawConfidence: 0.8, effectiveConfidence: 0.8, band: 'MEDIUM' as const, penaltiesApplied: [], corroborated: false, corroboratingSignals: [] };
     expect(mediumBandPermitsAutomation(uncorroborated, false, null, thresholds)).toBe(false);
+    expect(mediumBandPermitsAutomation(uncorroborated, false, false, thresholds)).toBe(false);
+  });
+
+  it('accepts EITHER corroboration or validator agreement for a medium-band item', async () => {
+    // Requiring both would make the band dead: an item usually reaches MEDIUM because corroboration
+    // failed, so demanding it again means nothing medium could ever be actioned (BRD section 9).
+    const thresholds = await store.getThresholds();
+    const base = { rawConfidence: 0.8, effectiveConfidence: 0.8, band: 'MEDIUM' as const, penaltiesApplied: [] };
+
+    const corroborated = { ...base, corroborated: true, corroboratingSignals: ['stuck'] };
+    const uncorroborated = { ...base, corroborated: false, corroboratingSignals: [] };
+
+    expect(mediumBandPermitsAutomation(corroborated, false, null, thresholds)).toBe(true);
+    expect(mediumBandPermitsAutomation(uncorroborated, false, true, thresholds)).toBe(true);
   });
 
   it('requires validator agreement for a medium-band multi-intent email', async () => {
@@ -319,6 +333,21 @@ describe('corroboration', () => {
     const sc01 = scenarios.find((s) => s.scenarioId === 'SC-01')!;
     const email = normaliseEmail(makeEmail({ body: 'I am stuck and cannot move on past the island.' }), [], [], opts);
     expect(corroborate(email, sc01, scenarios, 1).corroborated).toBe(true);
+  });
+
+  it('does not count an identified secondary intent as competing evidence', async () => {
+    // On a genuine multi-intent email the secondary intent legitimately carries signal. Treating it
+    // as evidence against the primary would fail corroboration on exactly the emails that
+    // multi-intent handling exists to serve.
+    const scenarios = await store.getScenarios();
+    const sc07 = scenarios.find((s) => s.scenarioId === 'SC-07')!;
+    const email = normaliseEmail(
+      makeEmail({ body: 'Where is the MEC capstone deck on Schoox? Also I am unable to access, cannot access login, sign in and the authenticator fails.' }),
+      [], [], opts,
+    );
+
+    expect(corroborate(email, sc07, scenarios, 1).corroborated).toBe(false);
+    expect(corroborate(email, sc07, scenarios, 1, ['SC-02']).corroborated).toBe(true);
   });
 
   it('fails to confirm when a different scenario has more signal', async () => {

@@ -38,6 +38,7 @@ blocked on a business answer. Requirement IDs are defined in `docs/requirements-
 | FR-023 | Business-readable summary, no chain-of-thought | `schemaValidator.ts` length cap | `security.test.ts` — Rule 11 (3 tests) | ✅ |
 | FR-024 | Multi-intent with a flag | `src/classification/multiIntentResolver.ts` | multi-intent tests; SC-07 + SC-02 | ✅ |
 | FR-025 | Escalate contradictory intents | `multiIntentResolver.ts` | MI-CR-VS-TECH, MI-RESOLVED-PLUS | ✅ |
+| FR-025a | Second-opinion validation (prompt 5) wired into the pipeline | `src/classification/routingValidator.ts`, orchestrator | `routingValidator.test.ts` (16), `routingValidatorWiring.test.ts` (15) | ✅ |
 | FR-026 | FIT/FLO from six evidence sources | `programResolver.ts` | programme resolution tests | ✅ |
 | FR-027 | **Fallback: route to BOTH owners** | `programResolver.ts` + `routing-rules.json` UNKNOWN rules | SC-01, SC-02 fallback; routing tests | ✅ |
 | FR-028 | No high confidence on weak evidence | `programResolver.ts` generic-keyword ceiling | "refuses to assign on generic keywords alone" | ✅ |

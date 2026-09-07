@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { actionTypes, AMY, JORDAN, JOSH, LIVE, liveWith, run } from '../helpers/harness.js';
+import { actionTypes, AMY, JORDAN, JOSH, LIVE, VALIDATOR_AGREES, liveWith, run } from '../helpers/harness.js';
 import { makeEmail } from '../helpers/fixtures.js';
 
 describe('SC-01 learner cannot advance', () => {
@@ -283,6 +283,30 @@ describe('SC-07 Schoox / MEC / CGR', () => {
   });
 
   it('involves the FIT/FLO owner as well when a separate FIT/FLO issue is present', async () => {
+    // Multi-intent requires the routing validator to agree (prompt 5), because the two intents
+    // would otherwise involve two teams on the strength of one label.
+    const { decision, mailbox } = await run(
+      makeEmail({
+        subject: 'MEC deck and FIT login',
+        body: 'Where is the MEC capstone deck on Schoox? Also I am unable to access FIT, the authenticator fails.',
+      }),
+      {
+        scenarioId: 'SC-07',
+        program: 'MEC_CGR',
+        multiIntent: true,
+        secondaryIntents: [{ scenarioId: 'SC-02', confidence: 0.82 }],
+      },
+      liveWith({ routingValidation: VALIDATOR_AGREES }),
+    );
+
+    expect(decision.multiIntentResolution.ruleApplied).toBe('MI-SCHOOX-PLUS');
+    expect(mailbox.recipients()).toContain(AMY);
+    // Programme is MEC_CGR by business rule, so the FIT/FLO secondary route falls back to both
+    // owners rather than guessing between them.
+    expect(mailbox.recipients()).toEqual(expect.arrayContaining([JORDAN, JOSH]));
+  });
+
+  it('escalates the same email when no second opinion is available', async () => {
     const { decision, mailbox } = await run(
       makeEmail({
         subject: 'MEC deck and FIT login',
@@ -297,11 +321,9 @@ describe('SC-07 Schoox / MEC / CGR', () => {
       LIVE,
     );
 
-    expect(decision.multiIntentResolution.ruleApplied).toBe('MI-SCHOOX-PLUS');
-    expect(mailbox.recipients()).toContain(AMY);
-    // Programme is MEC_CGR by business rule, so the FIT/FLO secondary route falls back to both
-    // owners rather than guessing between them.
-    expect(mailbox.recipients()).toEqual(expect.arrayContaining([JORDAN, JOSH]));
+    expect(decision.outcome).toBe('HUMAN_REVIEW');
+    expect(decision.humanReviewReason).toBe('HIL-02');
+    expect(mailbox.calls).toHaveLength(0);
   });
 });
 
