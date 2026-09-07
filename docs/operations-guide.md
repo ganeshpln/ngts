@@ -31,6 +31,17 @@ outbound capabilities are enabled.
 
 ---
 
+## 2a. Trying a decision before it happens
+
+`npm run shadow -- <sample.json>` runs any email through the real pipeline with shadow mode on and
+prints the decision, the resolved destinations and the plain-English effect. It never touches the
+mailbox. Use it to answer "where would this have gone?" without waiting for the email to arrive
+again - copy a real message into the sample format under `samples/`, and add its classification
+under `scriptedClassification` (or point the tool at Azure OpenAI to have the model classify it).
+
+`--as-shipped` runs the committed configuration untouched, which shows which feature flags are
+currently blocking an action.
+
 ## 3. Runbooks
 
 ### 3.1 Stop the automation immediately

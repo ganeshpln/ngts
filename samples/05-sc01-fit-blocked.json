@@ -1,0 +1,41 @@
+{
+  "description": "Learner blocked in FIT with a screenshot. Shows the honest state today: no approved wording exists, so it escalates.",
+  "message": {
+    "id": "AAMkAG-sample-05",
+    "internetMessageId": "<sample-05@pepsico.com>",
+    "conversationId": "conv-sample-05",
+    "subject": "Stuck on island 3",
+    "body": {
+      "contentType": "html",
+      "content": "<p>Hi,</p><p>I finished island 3 in my FIT journey but the Next button is greyed out and I cannot move on. I tried submitting the questionnaire twice and it says data not saved. Screenshot attached.</p><p>GPID 1847263</p>"
+    },
+    "from": { "address": "marcus.hale@pepsico.com", "name": "Marcus Hale" },
+    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "ccRecipients": [],
+    "receivedDateTime": "2026-09-03T13:20:00Z",
+    "hasAttachments": true,
+    "isRead": false,
+    "internetMessageHeaders": [],
+    "attachments": [
+      { "id": "att-1", "name": "island3-error.png", "contentType": "image/png", "size": 184320, "isInline": false }
+    ]
+  },
+  "scriptedClassification": {
+    "scenarioId": "SC-01",
+    "scenarioName": "Learner cannot advance in FIT/FLO journey",
+    "program": "FIT",
+    "programEvidence": [{ "source": "explicitProgramMention", "detail": "sender wrote 'my FIT journey'" }],
+    "intent": "learner_blocked_progress",
+    "subIntent": null,
+    "confidence": 0.96,
+    "senderType": "learner",
+    "requiresHumanReview": false,
+    "multiIntent": false,
+    "secondaryIntents": [],
+    "extractedEntities": { "learnerName": "Marcus Hale", "gpid": "1847263", "email": null, "program": "FIT", "island": "island 3", "week": null, "errorMessage": "data not saved" },
+    "missingRequiredInformation": [],
+    "reasoningSummary": "Learner cannot progress past island 3 in FIT; the Next control is greyed out and submissions are not saving.",
+    "injectionSuspected": false,
+    "languageDetected": "en"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "description": "Manager query where the change-vs-technical branch is genuinely unclear. Escalates rather than guessing between two teams.",
+  "message": {
+    "id": "AAMkAG-sample-06",
+    "internetMessageId": "<sample-06@pepsico.com>",
+    "conversationId": "conv-sample-06",
+    "subject": "Manager access",
+    "body": {
+      "contentType": "text",
+      "content": "Hello, I have a question about manager access for my team and the check-ins that are showing against my direct supervisor. Could someone take a look please?"
+    },
+    "from": { "address": "helen.ward@pepsico.com", "name": "Helen Ward" },
+    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "ccRecipients": [],
+    "receivedDateTime": "2026-09-03T15:05:00Z",
+    "hasAttachments": false,
+    "isRead": false,
+    "internetMessageHeaders": [],
+    "attachments": []
+  },
+  "scriptedClassification": {
+    "scenarioId": "SC-03",
+    "scenarioName": "Manager access / manager change",
+    "program": "UNKNOWN",
+    "programEvidence": [{ "source": "genericKeyword" }],
+    "intent": "manager_access_or_change",
+    "subIntent": null,
+    "confidence": 0.88,
+    "senderType": "manager",
+    "requiresHumanReview": false,
+    "multiIntent": false,
+    "secondaryIntents": [],
+    "extractedEntities": { "learnerName": null, "gpid": null, "email": null, "program": null, "island": null, "week": null, "errorMessage": null },
+    "missingRequiredInformation": [],
+    "reasoningSummary": "Manager query about access and check-ins, but it is not clear whether they want a change made or are reporting a fault.",
+    "injectionSuspected": false,
+    "languageDetected": "en"
+  }
+}

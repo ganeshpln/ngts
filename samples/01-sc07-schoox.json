@@ -1,0 +1,39 @@
+{
+  "description": "Schoox / MEC question - the cleanest happy path. Routes directly to Amy, files in Schoox.",
+  "message": {
+    "id": "AAMkAG-sample-01",
+    "internetMessageId": "<sample-01@pepsico.com>",
+    "conversationId": "conv-sample-01",
+    "subject": "MEC workweek 3 deck",
+    "body": {
+      "contentType": "text",
+      "content": "Hi, where can I find the Merch Effectiveness Coach workweek 3 deck on Schoox? The resources link on the MEC pathway page does not open for me.\n\nThanks,\nPriya"
+    },
+    "from": { "address": "priya.n@pepsico.com", "name": "Priya N" },
+    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "ccRecipients": [],
+    "receivedDateTime": "2026-09-02T09:14:00Z",
+    "hasAttachments": false,
+    "isRead": false,
+    "internetMessageHeaders": [],
+    "attachments": []
+  },
+  "scriptedClassification": {
+    "scenarioId": "SC-07",
+    "scenarioName": "Schoox / MEC / CGR",
+    "program": "MEC_CGR",
+    "programEvidence": [{ "source": "businessRule", "detail": "MEC pathway on Schoox" }],
+    "intent": "schoox_mec_cgr",
+    "subIntent": null,
+    "confidence": 0.94,
+    "senderType": "learner",
+    "requiresHumanReview": false,
+    "multiIntent": false,
+    "secondaryIntents": [],
+    "extractedEntities": { "learnerName": null, "gpid": null, "email": null, "program": null, "island": null, "week": "workweek 3", "errorMessage": null },
+    "missingRequiredInformation": [],
+    "reasoningSummary": "Sender is asking where to find MEC workweek content on Schoox, which is the Merch Effectiveness Coach pathway.",
+    "injectionSuspected": false,
+    "languageDetected": "en"
+  }
+}

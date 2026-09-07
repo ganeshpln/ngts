@@ -1,0 +1,39 @@
+{
+  "description": "Content question with no programme named - demonstrates the BRD both-owners fallback (FR-027).",
+  "message": {
+    "id": "AAMkAG-sample-02",
+    "internetMessageId": "<sample-02@pepsico.com>",
+    "conversationId": "conv-sample-02",
+    "subject": "Rise module will not open",
+    "body": {
+      "contentType": "text",
+      "content": "The Rise module for week 4 will not open for me - it just spins. Is there a PDF version of the content I could use instead? I need to finish the certification this week."
+    },
+    "from": { "address": "dan.mcbride@pepsico.com", "name": "Dan McBride" },
+    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "ccRecipients": [],
+    "receivedDateTime": "2026-09-02T10:02:00Z",
+    "hasAttachments": false,
+    "isRead": false,
+    "internetMessageHeaders": [],
+    "attachments": []
+  },
+  "scriptedClassification": {
+    "scenarioId": "SC-10",
+    "scenarioName": "Content / materials / resources",
+    "program": "UNKNOWN",
+    "programEvidence": [{ "source": "genericKeyword", "detail": "content vocabulary only; neither FIT nor FLO is named" }],
+    "intent": "content_materials_resources",
+    "subIntent": null,
+    "confidence": 0.91,
+    "senderType": "learner",
+    "requiresHumanReview": false,
+    "multiIntent": false,
+    "secondaryIntents": [],
+    "extractedEntities": { "learnerName": null, "gpid": null, "email": null, "program": null, "island": null, "week": "week 4", "errorMessage": null },
+    "missingRequiredInformation": [],
+    "reasoningSummary": "Learner cannot open a Rise content module and is asking for an alternative format. No programme is named.",
+    "injectionSuspected": false,
+    "languageDetected": "en"
+  }
+}

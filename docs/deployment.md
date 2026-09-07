@@ -145,18 +145,29 @@ App's managed identity (NFR-009, NFR-010, Rule 4).
 
 ## 7. Go-live sequence
 
-The system ships with every outbound capability **disabled**. Enable them deliberately, one at a
-time, verifying each before the next.
+The system ships with every outbound capability **disabled** and shadow mode **on**. These are two
+independent controls, and understanding the difference matters:
 
-| Stage | Enable | Gate |
+- **Capability flags** (`forwardingEnabled`, `moveEnabled`, …) say *what the system is configured to
+  do*. With a flag off, the ActionValidator rejects that action and the email escalates.
+- **`shadowMode`** says *whether anything is actually executed*. With it on, the full decision is
+  made, validated and audited, and every mailbox side effect is suppressed.
+
+So a shadow pilot enables the capabilities you intend to run and keeps `shadowMode` on. Running a
+pilot with every capability disabled teaches you nothing — every email reports as blocked on its
+feature flag rather than showing the routing decision you wanted to observe.
+
+| Stage | Configuration | Gate |
 |---|---|---|
-| 1. Shadow | *(nothing)* | Run for at least two weeks. Review the classification distribution, confidence bands and human-review rate. Tune thresholds in the Dataverse `Configuration` table. |
-| 2. Filing | `markAsReadEnabled`, `moveEnabled` | Folder names confirmed (Q-07). Verify SC-04, SC-11 filing on real mail. |
-| 3. Routing | `forwardingEnabled` | Owner addresses confirmed. Watch for misrouted mail for one week. |
-| 4. Responding | `sendResponsesEnabled` + activate templates | **Approved wording supplied and templates activated (Q-02, Q-03).** Verify the outbound domain allow-list. |
-| 5. Change requests | `changeRequestRoutingEnabled` | Change-request mechanics confirmed (Q-04). |
-| 6. Deletion | `deleteEnabled` | Delete semantics and retention confirmed (Q-08). Keep `hardDeleteEnabled` off. |
-| 7. Live | `shadowMode` off | All of the above verified. |
+| 1. Shadow pilot | `shadowMode: true`, plus the capabilities you intend to run (typically mark-read, move, forwarding) | Run for at least two weeks. Review the classification distribution, confidence bands, human-review rate and the audited action plans. Tune thresholds in the Dataverse `Configuration` table. **This is the only stage that measures classification accuracy.** |
+| 2. Filing live | `shadowMode: false` with only `markAsReadEnabled`, `moveEnabled` | Folder names confirmed (Q-07). Verify SC-04, SC-11 filing on real mail. Filing is the lowest-risk action: it is visible and reversible. |
+| 3. Routing | add `forwardingEnabled` | Owner addresses confirmed. Watch for misrouted mail for one week. |
+| 4. Responding | add `sendResponsesEnabled` + activate templates | **Approved wording supplied and templates activated (Q-02, Q-03).** Verify the outbound domain allow-list. |
+| 5. Change requests | add `changeRequestRoutingEnabled` | Change-request mechanics confirmed (Q-04). |
+| 6. Deletion | add `deleteEnabled` | Delete semantics and retention confirmed (Q-08). Keep `hardDeleteEnabled` off. |
+
+To rehearse any stage before committing to it, set `shadowMode: true` with that stage's flags on:
+the decisions are real and fully audited, and nothing is executed.
 
 Rolling back a stage is a configuration change in Dataverse, not a deployment.
 

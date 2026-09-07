@@ -1,0 +1,42 @@
+{
+  "description": "Out-of-office auto-reply. Marked read and soft-deleted, no response. The only scenario permitted to delete.",
+  "message": {
+    "id": "AAMkAG-sample-03",
+    "internetMessageId": "<sample-03@pepsico.com>",
+    "conversationId": "conv-sample-03",
+    "subject": "Automatic reply: PEP Passport access",
+    "body": {
+      "contentType": "text",
+      "content": "I am currently out of the office with limited access to email and will return on Monday 8 September. For urgent issues please contact my colleague."
+    },
+    "from": { "address": "alex.turner@pepsico.com", "name": "Alex Turner" },
+    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "ccRecipients": [],
+    "receivedDateTime": "2026-09-02T11:31:00Z",
+    "hasAttachments": false,
+    "isRead": false,
+    "internetMessageHeaders": [
+      { "name": "Auto-Submitted", "value": "auto-replied" },
+      { "name": "X-Auto-Response-Suppress", "value": "All" }
+    ],
+    "attachments": []
+  },
+  "scriptedClassification": {
+    "scenarioId": "SC-08",
+    "scenarioName": "Automatic replies / out-of-office",
+    "program": "ALL",
+    "programEvidence": [],
+    "intent": "auto_reply_out_of_office",
+    "subIntent": null,
+    "confidence": 0.97,
+    "senderType": "system",
+    "requiresHumanReview": false,
+    "multiIntent": false,
+    "secondaryIntents": [],
+    "extractedEntities": { "learnerName": null, "gpid": null, "email": null, "program": null, "island": null, "week": null, "errorMessage": null },
+    "missingRequiredInformation": [],
+    "reasoningSummary": "Machine-generated out-of-office reply carrying RFC 3834 auto-submitted headers.",
+    "injectionSuspected": false,
+    "languageDetected": "en"
+  }
+}

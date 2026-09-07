@@ -1,0 +1,39 @@
+{
+  "description": "Sender confirms the issue is resolved. Filed in Resolved, marked read, no response.",
+  "message": {
+    "id": "AAMkAG-sample-04",
+    "internetMessageId": "<sample-04@pepsico.com>",
+    "conversationId": "conv-sample-04",
+    "subject": "RE: FLO access",
+    "body": {
+      "contentType": "text",
+      "content": "Thank you, that worked - I have confirmed access and I am able to work through the modules now. Really appreciate the quick help."
+    },
+    "from": { "address": "jo.fielding@pepsico.com", "name": "Jo Fielding" },
+    "toRecipients": [{ "address": "spa@pepsico.com", "name": "SPA Mailbox" }],
+    "ccRecipients": [],
+    "receivedDateTime": "2026-09-03T08:45:00Z",
+    "hasAttachments": false,
+    "isRead": false,
+    "internetMessageHeaders": [],
+    "attachments": []
+  },
+  "scriptedClassification": {
+    "scenarioId": "SC-11",
+    "scenarioName": "Request completed / sender confirms resolved",
+    "program": "ALL",
+    "programEvidence": [],
+    "intent": "resolved_confirmation",
+    "subIntent": null,
+    "confidence": 0.93,
+    "senderType": "learner",
+    "requiresHumanReview": false,
+    "multiIntent": false,
+    "secondaryIntents": [],
+    "extractedEntities": { "learnerName": null, "gpid": null, "email": null, "program": null, "island": null, "week": null, "errorMessage": null },
+    "missingRequiredInformation": [],
+    "reasoningSummary": "Sender thanks the team and confirms they now have access and can work.",
+    "injectionSuspected": false,
+    "languageDetected": "en"
+  }
+}

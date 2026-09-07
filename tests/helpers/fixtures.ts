@@ -13,11 +13,6 @@ import type {
   ThreadMessage,
 } from '../../src/common/types.js';
 import type {
-  ProcessingRecord,
-  ProcessingStatus,
-  ProcessingStore,
-} from '../../src/email/idempotency.js';
-import type {
   AuditPort,
   AuditRecord,
   ForwardCommand,
@@ -120,66 +115,7 @@ export function asModelOutput(classification: Partial<Classification> = {}): str
 // Ports
 // ---------------------------------------------------------------------------
 
-export class InMemoryProcessingStore implements ProcessingStore {
-  private readonly byInternetMessageId = new Map<string, ProcessingRecord>();
-  private readonly bySecondary = new Map<string, ProcessingRecord>();
-  outboundCounts = new Map<string, number>();
-  claimAttempts = 0;
-
-  private secondaryKey(bodyHash: string, sender: string, subject: string): string {
-    return `${bodyHash}|${sender}|${subject}`;
-  }
-
-  async tryClaim(record: ProcessingRecord): Promise<ProcessingRecord | null> {
-    this.claimAttempts += 1;
-    // Mirrors the Dataverse alternate-key behaviour: the insert fails if the key is taken.
-    if (this.byInternetMessageId.has(record.internetMessageId)) return null;
-    this.byInternetMessageId.set(record.internetMessageId, record);
-    // First writer wins on the secondary key, mirroring a Dataverse query ordered by created date:
-    // a resend must resolve to the ORIGINAL processing row, not overwrite it.
-    const secondary = this.secondaryKey(record.bodyHash, record.senderEmail, record.subject);
-    if (!this.bySecondary.has(secondary)) this.bySecondary.set(secondary, record);
-    return record;
-  }
-
-  async findByInternetMessageId(id: string): Promise<ProcessingRecord | null> {
-    return this.byInternetMessageId.get(id) ?? null;
-  }
-
-  async findBySecondaryKey(bodyHash: string, sender: string, subject: string): Promise<ProcessingRecord | null> {
-    return this.bySecondary.get(this.secondaryKey(bodyHash, sender, subject)) ?? null;
-  }
-
-  async updateStatus(processingId: string, status: ProcessingStatus): Promise<void> {
-    for (const [key, record] of this.byInternetMessageId) {
-      if (record.processingId === processingId) {
-        this.byInternetMessageId.set(key, { ...record, status });
-      }
-    }
-  }
-
-  async countOutboundForConversation(conversationId: string): Promise<number> {
-    return this.outboundCounts.get(conversationId) ?? 0;
-  }
-
-  /** Simulate a prior processing attempt in a given terminal state. */
-  seed(record: Partial<ProcessingRecord> & { internetMessageId: string }): void {
-    const full: ProcessingRecord = {
-      processingId: record.processingId ?? 'seeded',
-      internetMessageId: record.internetMessageId,
-      messageId: record.messageId ?? 'seeded-message',
-      conversationId: record.conversationId ?? 'seeded-conversation',
-      bodyHash: record.bodyHash ?? 'seeded-hash',
-      senderEmail: record.senderEmail ?? 'learner@pepsico.com',
-      subject: record.subject ?? 'seeded',
-      status: record.status ?? 'Completed',
-      retryCount: record.retryCount ?? 0,
-      createdDate: record.createdDate ?? '2026-09-01T00:00:00Z',
-    };
-    this.byInternetMessageId.set(full.internetMessageId, full);
-    this.bySecondary.set(this.secondaryKey(full.bodyHash, full.senderEmail, full.subject), full);
-  }
-}
+export { InMemoryProcessingStore } from '../../src/email/inMemoryProcessingStore.js';
 
 export interface RecordedCall {
   readonly kind: 'sendReply' | 'forward' | 'move' | 'markAsRead' | 'softDelete' | 'hardDelete';

@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "validate:config": "node --import tsx src/configuration/validateCli.ts"
+    "validate:config": "node --import tsx src/configuration/validateCli.ts",
+    "shadow": "node --import tsx src/tools/shadowRun.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

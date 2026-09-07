@@ -104,6 +104,25 @@ npm run validate:config    # business-rule sanity check; fails the build on a ba
 npm test
 ```
 
+### Run an email through it
+
+```bash
+npm run shadow -- --all                          # all 8 sample emails
+npm run shadow -- samples/01-sc07-schoox.json    # one
+npm run shadow -- samples/01-sc07-schoox.json --as-shipped   # committed config, everything disabled
+npm run shadow -- samples/01-sc07-schoox.json --json         # machine-readable
+```
+
+This runs the **real** pipeline in shadow mode and prints what the system would have done - the
+scenario, the programme, the confidence band, the resolved destinations and the plain-English
+effect. It never touches a mailbox: the executor is handed a port that throws if called, so "shadow
+mode performs no mailbox action" is demonstrated rather than asserted.
+
+With no `AZURE_OPENAI_ENDPOINT` set it uses the classification stored in each sample file and says
+so in the output. That exercises the deterministic layer, which is where the controls live; it tells
+you nothing about how well the model would classify. Set `AZURE_OPENAI_ENDPOINT` and
+`AZURE_OPENAI_DEPLOYMENT` and it calls the real model instead.
+
 `validate:config` is the interesting one: it fails when a scenario permits an action outside the
 approved set, a routing rule points at a scenario that does not exist, deletion is enabled outside
 SC-08, sending is enabled with no active template, or a FIT/FLO scenario is missing its `UNKNOWN`
