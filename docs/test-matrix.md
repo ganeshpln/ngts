@@ -85,6 +85,7 @@ evidence that they work.
 | The real Azure OpenAI calls | No endpoint available. The client is unit-tested through its port; the HTTP path has not run. | DEV smoke test. |
 | Dataverse persistence | The `ProcessingStore` is exercised through an in-memory double with the same uniqueness semantics. **The alternate-key constraint that makes idempotency real is a platform feature and must be verified in DEV.** | DEV: attempt two concurrent claims of one `internetMessageId`. |
 | Power Automate flow execution | Flows are designed, not built, in this repository. | Manual test per flow in DEV. |
+| Azure resource provisioning | The Bicep template compiles in CI but has never been deployed. | DEV deployment, then verify role assignments, Easy Auth and identity-based storage access. |
 | Copilot Studio agent behaviour | Configured, not deployed. | Manual test in DEV. |
 | Real-world classification accuracy | The model is scripted, so these tests measure the deterministic layer, not the model's judgement. | The shadow-mode pilot (`docs/deployment.md` §7 stage 1) is what measures accuracy. |
 | End-to-end latency and throughput | No volume targets exist (GAP-002). | Load test once Q-15 is answered. |
