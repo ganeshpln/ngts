@@ -1,0 +1,104 @@
+# CI for the SPA Mailbox Automation Decision Service (BRD Phase 8).
+#
+# Every gate here corresponds to a BRD rule: configuration validation (Rule 3), the full test suite
+# including the security suite (Rule 10, Phase 7), and a secret scan (Rule 4, NFR-009).
+
+name: SPA Mailbox Automation CI
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'config/**'
+      - 'prompts/**'
+      - 'infrastructure/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'vitest.config.ts'
+      - '.github/workflows/spa-mailbox-ci.yml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build, validate and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (strict)
+        run: npm run typecheck
+
+      - name: Validate business configuration
+        # Fails the build if a scenario permits an unapproved action, a routing rule points at a
+        # missing scenario, deletion is enabled outside SC-08, or a threshold is out of range.
+        run: npm run validate:config
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail on credential-shaped content in source or configuration
+        # Rule 4 / NFR-009: no password, secret, key or token may be committed. Managed Identity is
+        # used everywhere it is supported, and Key Vault holds the rest.
+        run: |
+          set -euo pipefail
+          patterns='(client_secret|clientSecret|api[_-]?key|AccountKey=|BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY|password"\s*:\s*"[^"]|SharedAccessSignature)'
+          if grep -rInE "$patterns" src config prompts infrastructure tests \
+               --exclude-dir=node_modules >/dev/null 2>&1; then
+            echo "::error::Credential-shaped content detected. See NFR-009 and Rule 4."
+            grep -rInE "$patterns" src config prompts infrastructure tests --exclude-dir=node_modules || true
+            exit 1
+          fi
+          echo "No credential-shaped content found."
+
+      - name: Fail if local settings were committed
+        run: |
+          set -euo pipefail
+          if git ls-files --error-unmatch local.settings.json >/dev/null 2>&1; then
+            echo "::error::local.settings.json must never be committed."
+            exit 1
+          fi
+          echo "No local settings committed."
+
+  bicep-validate:
+    name: Validate Bicep
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Bicep templates
+        # az bicep build is a compile check; it needs no Azure credentials.
+        run: |
+          set -euo pipefail
+          az bicep install
+          az bicep build --file infrastructure/bicep/main.bicep --stdout > /dev/null
+          echo "Bicep template compiles."

@@ -1,0 +1,316 @@
+{
+  "$comment": "Dataverse table definitions for the SPAMailboxAutomation solution. Physical spec is docs/data-model.md. Publisher prefix 'spa'. This file drives the table-provisioning script and is the reviewable source for the schema; it is not a Power Platform solution file.",
+  "publisherPrefix": "spa",
+  "solutionName": "SPAMailboxAutomation",
+  "version": "1.0.0",
+  "tables": [
+    {
+      "logicalName": "spa_emailprocessing",
+      "displayName": "Email Processing",
+      "description": "One row per inbound message. The idempotency and audit spine (FR-013, FR-070).",
+      "ownershipType": "OrganizationOwned",
+      "primaryNameColumn": "spa_processingid",
+      "alternateKeys": [
+        { "name": "spa_ak_internetmessageid", "columns": ["spa_internetmessageid"], "comment": "Enforces idempotency at the platform. A concurrent duplicate claim fails here, not in application code (FR-071)." }
+      ],
+      "indexes": [
+        { "columns": ["spa_conversationid"] },
+        { "columns": ["spa_receiveddatetime"] },
+        { "columns": ["spa_scenarioid", "spa_regioncode"], "comment": "Weekly report aggregation (BRD 19)." },
+        { "columns": ["spa_processingstatus"] }
+      ],
+      "auditEnabled": true,
+      "columns": [
+        { "name": "spa_processingid", "type": "String", "maxLength": 50, "required": true },
+        { "name": "spa_messageid", "type": "String", "maxLength": 500, "required": true },
+        { "name": "spa_internetmessageid", "type": "String", "maxLength": 500, "required": true },
+        { "name": "spa_conversationid", "type": "String", "maxLength": 500 },
+        { "name": "spa_conversationindex", "type": "String", "maxLength": 1000 },
+        { "name": "spa_receiveddatetime", "type": "DateTime", "required": true },
+        { "name": "spa_senderemail", "type": "String", "maxLength": 320, "classification": "personal" },
+        { "name": "spa_sendername", "type": "String", "maxLength": 200, "classification": "personal" },
+        { "name": "spa_sendertype", "type": "Choice", "options": ["learner", "manager", "peer_trainer", "hr", "internal", "external", "system", "unknown"] },
+        { "name": "spa_subject", "type": "String", "maxLength": 500 },
+        { "name": "spa_bodyhash", "type": "String", "maxLength": 64 },
+        { "name": "spa_bodypreview", "type": "Memo", "maxLength": 2000, "comment": "Empty unless safety.storeBodyPreview is enabled (NFR-007, AD-012)." },
+        { "name": "spa_attachmentcount", "type": "Integer" },
+        { "name": "spa_hasattachments", "type": "Boolean" },
+        { "name": "spa_scenarioid", "type": "String", "maxLength": 10 },
+        { "name": "spa_scenarioname", "type": "String", "maxLength": 200 },
+        { "name": "spa_program", "type": "Choice", "options": ["FIT", "FLO", "MEC_CGR", "ALL", "UNKNOWN"] },
+        { "name": "spa_intent", "type": "String", "maxLength": 200 },
+        { "name": "spa_confidence", "type": "Decimal", "precision": 2 },
+        { "name": "spa_confidenceband", "type": "Choice", "options": ["HIGH", "MEDIUM", "LOW"] },
+        { "name": "spa_multiintent", "type": "Boolean" },
+        { "name": "spa_processingstatus", "type": "Choice", "required": true, "options": ["Claimed", "Classifying", "Decided", "Executing", "Completed", "Failed", "HumanReview", "Suppressed", "Duplicate"] },
+        { "name": "spa_actiontaken", "type": "String", "maxLength": 500 },
+        { "name": "spa_routingowner", "type": "String", "maxLength": 200 },
+        { "name": "spa_routingemail", "type": "String", "maxLength": 1000, "comment": "May hold TWO addresses under the BRD both-owners fallback (FR-027)." },
+        { "name": "spa_destinationfolder", "type": "String", "maxLength": 200 },
+        { "name": "spa_responsetemplateid", "type": "String", "maxLength": 50 },
+        { "name": "spa_humanreviewrequired", "type": "Boolean" },
+        { "name": "spa_humanreviewreason", "type": "String", "maxLength": 200 },
+        { "name": "spa_humanreviewedby", "type": "Lookup", "target": "systemuser" },
+        { "name": "spa_humanreviewdate", "type": "DateTime" },
+        { "name": "spa_errorcode", "type": "String", "maxLength": 50 },
+        { "name": "spa_errormessage", "type": "Memo", "maxLength": 2000 },
+        { "name": "spa_retrycount", "type": "Integer" },
+        { "name": "spa_correlationid", "type": "String", "maxLength": 50 },
+        { "name": "spa_regioncode", "type": "String", "maxLength": 50, "comment": "UNMAPPED until GAP-012 closes." },
+        { "name": "spa_suppressedreason", "type": "Choice", "options": ["OwnerResponded", "SelfSent", "AutoReplyLoop", "ConversationCapExceeded", "RateLimited"] },
+        { "name": "spa_createddate", "type": "DateTime", "required": true },
+        { "name": "spa_completeddate", "type": "DateTime" }
+      ]
+    },
+    {
+      "logicalName": "spa_classificationresult",
+      "displayName": "Classification Result",
+      "description": "The validated structured AI output, with prompt and model provenance.",
+      "auditEnabled": true,
+      "columns": [
+        { "name": "spa_processingid", "type": "Lookup", "target": "spa_emailprocessing", "required": true },
+        { "name": "spa_rawoutput", "type": "Memo", "maxLength": 8000, "comment": "Never contains chain-of-thought (Rule 11)." },
+        { "name": "spa_reasoningsummary", "type": "Memo", "maxLength": 1000 },
+        { "name": "spa_promptname", "type": "String", "maxLength": 100 },
+        { "name": "spa_promptversion", "type": "String", "maxLength": 20 },
+        { "name": "spa_modelname", "type": "String", "maxLength": 100 },
+        { "name": "spa_modelversion", "type": "String", "maxLength": 50 },
+        { "name": "spa_latencyms", "type": "Integer" },
+        { "name": "spa_prompttokens", "type": "Integer" },
+        { "name": "spa_completiontokens", "type": "Integer" },
+        { "name": "spa_schemavalid", "type": "Boolean" },
+        { "name": "spa_repairattempted", "type": "Boolean" },
+        { "name": "spa_secondaryintents", "type": "Memo", "maxLength": 1000 },
+        { "name": "spa_injectiondetected", "type": "Boolean" },
+        { "name": "spa_createddate", "type": "DateTime" }
+      ]
+    },
+    {
+      "logicalName": "spa_emailaction",
+      "displayName": "Email Action",
+      "description": "One row per action attempt. Required for 'an auditable record of every action' (FR-013); EmailProcessing has no per-action grain.",
+      "auditEnabled": true,
+      "columns": [
+        { "name": "spa_processingid", "type": "Lookup", "target": "spa_emailprocessing", "required": true },
+        { "name": "spa_sequence", "type": "Integer", "required": true },
+        { "name": "spa_actiontype", "type": "Choice", "required": true, "options": ["SendResponse", "ForwardEmail", "MoveEmail", "MarkAsRead", "DeleteEmail", "RouteToChangeRequest", "RouteToProgramOwner", "EscalateToHumanReview", "GenerateReport"] },
+        { "name": "spa_actionparameters", "type": "Memo", "maxLength": 4000 },
+        { "name": "spa_resolveddestination", "type": "String", "maxLength": 1000, "comment": "Evidence that the destination came from configuration (Rule 16)." },
+        { "name": "spa_status", "type": "Choice", "required": true, "options": ["Planned", "Approved", "Rejected", "Executing", "Succeeded", "Failed", "Skipped", "Shadowed"] },
+        { "name": "spa_rejectionreason", "type": "String", "maxLength": 500 },
+        { "name": "spa_attemptcount", "type": "Integer" },
+        { "name": "spa_graphrequestid", "type": "String", "maxLength": 100 },
+        { "name": "spa_startedat", "type": "DateTime" },
+        { "name": "spa_completedat", "type": "DateTime" }
+      ]
+    },
+    {
+      "logicalName": "spa_attachment",
+      "displayName": "Attachment",
+      "description": "Attachment metadata only. Content is never stored or downloaded (FR-080, threat T-14).",
+      "columns": [
+        { "name": "spa_processingid", "type": "Lookup", "target": "spa_emailprocessing", "required": true },
+        { "name": "spa_graphattachmentid", "type": "String", "maxLength": 500 },
+        { "name": "spa_filename", "type": "String", "maxLength": 500, "comment": "Sanitised before storage - a filename is attacker-controlled text (T-04)." },
+        { "name": "spa_extension", "type": "String", "maxLength": 20 },
+        { "name": "spa_mimetype", "type": "String", "maxLength": 200 },
+        { "name": "spa_sizebytes", "type": "Integer" },
+        { "name": "spa_isinline", "type": "Boolean" },
+        { "name": "spa_supported", "type": "Boolean" },
+        { "name": "spa_handlerapplied", "type": "String", "maxLength": 100 },
+        { "name": "spa_handleroutput", "type": "Memo", "maxLength": 4000 }
+      ]
+    },
+    {
+      "logicalName": "spa_processingerror",
+      "displayName": "Processing Error",
+      "description": "Errors and retry state (NFR-001 to NFR-004).",
+      "columns": [
+        { "name": "spa_processingid", "type": "Lookup", "target": "spa_emailprocessing" },
+        { "name": "spa_stage", "type": "Choice", "options": ["Ingest", "Normalise", "Guard", "Classify", "Decide", "Validate", "Execute", "Audit", "Report", "Configuration"] },
+        { "name": "spa_errorcategory", "type": "Choice", "options": ["Transient", "Permanent", "Guardrail"] },
+        { "name": "spa_errorcode", "type": "String", "maxLength": 50 },
+        { "name": "spa_errormessage", "type": "Memo", "maxLength": 2000 },
+        { "name": "spa_attemptnumber", "type": "Integer" },
+        { "name": "spa_maxattempts", "type": "Integer" },
+        { "name": "spa_nextretryat", "type": "DateTime" },
+        { "name": "spa_deadlettered", "type": "Boolean" },
+        { "name": "spa_alertraised", "type": "Boolean" }
+      ]
+    },
+    {
+      "logicalName": "spa_humanreviewqueue",
+      "displayName": "Human Review Queue",
+      "description": "Review work items (BRD 10, FR-060 to FR-063).",
+      "auditEnabled": true,
+      "columns": [
+        { "name": "spa_processingid", "type": "Lookup", "target": "spa_emailprocessing", "required": true },
+        { "name": "spa_triggerreason", "type": "Choice", "required": true, "options": ["HIL-01", "HIL-02", "HIL-03", "HIL-04", "HIL-05", "HIL-06", "HIL-07", "HIL-08", "HIL-09"] },
+        { "name": "spa_status", "type": "Choice", "required": true, "options": ["Pending", "InReview", "Approved", "Rejected", "Corrected", "Expired"] },
+        { "name": "spa_priority", "type": "Choice", "options": ["Low", "Normal", "High"] },
+        { "name": "spa_assignedto", "type": "Lookup", "target": "systemuser" },
+        { "name": "spa_proposedplan", "type": "Memo", "maxLength": 4000 },
+        { "name": "spa_originalmessagelink", "type": "String", "maxLength": 1000, "format": "Url" },
+        { "name": "spa_sladueby", "type": "DateTime", "comment": "GAP-008 - no SLA defined yet." },
+        { "name": "spa_reviewedat", "type": "DateTime" }
+      ]
+    },
+    {
+      "logicalName": "spa_humanreviewcorrection",
+      "displayName": "Human Review Correction",
+      "description": "Before/after corrections captured for prompt and model improvement (FR-064).",
+      "columns": [
+        { "name": "spa_humanreviewqueueid", "type": "Lookup", "target": "spa_humanreviewqueue", "required": true },
+        { "name": "spa_field", "type": "Choice", "required": true, "options": ["Scenario", "Program", "Routing", "Template", "Action", "SenderType"] },
+        { "name": "spa_originalvalue", "type": "String", "maxLength": 500 },
+        { "name": "spa_correctedvalue", "type": "String", "maxLength": 500 },
+        { "name": "spa_correctionnote", "type": "Memo", "maxLength": 2000 },
+        { "name": "spa_promptversion", "type": "String", "maxLength": 20, "comment": "Attributes an error to the prompt version that produced it." },
+        { "name": "spa_correctedby", "type": "Lookup", "target": "systemuser" }
+      ]
+    },
+    {
+      "logicalName": "spa_weeklyreportrun",
+      "displayName": "Weekly Report Run",
+      "description": "Audit of each Friday report generation (FR-098).",
+      "columns": [
+        { "name": "spa_periodstart", "type": "DateTime", "required": true },
+        { "name": "spa_periodend", "type": "DateTime", "required": true },
+        { "name": "spa_generatedat", "type": "DateTime" },
+        { "name": "spa_status", "type": "Choice", "options": ["Succeeded", "Failed", "PartialUnmapped"] },
+        { "name": "spa_totalemails", "type": "Integer" },
+        { "name": "spa_unmappedregioncount", "type": "Integer", "comment": "Surfaces GAP-012 to the business every week." },
+        { "name": "spa_payload", "type": "Memo", "maxLength": 50000 },
+        { "name": "spa_recipients", "type": "Memo", "maxLength": 2000 }
+      ]
+    },
+    {
+      "logicalName": "spa_businessscenario",
+      "displayName": "Business Scenario",
+      "description": "Configuration. Seeded from config/scenarios.json.",
+      "configurationTable": true,
+      "alternateKeys": [{ "name": "spa_ak_scenarioid", "columns": ["spa_scenarioid"] }],
+      "columns": [
+        { "name": "spa_scenarioid", "type": "String", "maxLength": 10, "required": true },
+        { "name": "spa_scenarioname", "type": "String", "maxLength": 200, "required": true },
+        { "name": "spa_description", "type": "Memo", "maxLength": 2000 },
+        { "name": "spa_keywords", "type": "Memo", "maxLength": 4000 },
+        { "name": "spa_positiveexamples", "type": "Memo", "maxLength": 4000 },
+        { "name": "spa_negativeexamples", "type": "Memo", "maxLength": 4000 },
+        { "name": "spa_programscope", "type": "Choice", "options": ["FIT_FLO", "MEC_CGR", "ANY"] },
+        { "name": "spa_allowedactions", "type": "Memo", "maxLength": 500 },
+        { "name": "spa_sendresponseallowed", "type": "Boolean", "required": true, "comment": "Rule 14 gate." },
+        { "name": "spa_deleteallowed", "type": "Boolean", "required": true, "comment": "Rule 15 gate - SC-08 only." },
+        { "name": "spa_requiresprogram", "type": "Boolean" },
+        { "name": "spa_confidencethresholdoverride", "type": "Decimal", "precision": 2 },
+        { "name": "spa_escalationrule", "type": "Memo", "maxLength": 2000 },
+        { "name": "spa_precedence", "type": "Integer" },
+        { "name": "spa_isactive", "type": "Boolean", "required": true }
+      ]
+    },
+    {
+      "logicalName": "spa_routingrule",
+      "displayName": "Routing Rule",
+      "description": "Configuration. THE ONLY source of routing destinations (Rule 16). Seeded from config/routing-rules.json.",
+      "configurationTable": true,
+      "columns": [
+        { "name": "spa_scenarioid", "type": "String", "maxLength": 10, "required": true },
+        { "name": "spa_program", "type": "Choice", "required": true, "options": ["FIT", "FLO", "MEC_CGR", "ALL", "UNKNOWN"] },
+        { "name": "spa_subintent", "type": "String", "maxLength": 50 },
+        { "name": "spa_ownername", "type": "String", "maxLength": 200 },
+        { "name": "spa_owneremail", "type": "String", "maxLength": 1000, "required": true, "comment": "Semicolon-separated for the both-owners fallback (FR-027)." },
+        { "name": "spa_routingtarget", "type": "Choice", "required": true, "options": ["PROGRAM_OWNER", "CHANGE_REQUEST", "SCHOOX_OWNER", "HUMAN_REVIEW", "NONE"] },
+        { "name": "spa_destinationfolder", "type": "String", "maxLength": 200 },
+        { "name": "spa_responsetemplateid", "type": "String", "maxLength": 50 },
+        { "name": "spa_actiontype", "type": "Memo", "maxLength": 500 },
+        { "name": "spa_confidencethreshold", "type": "Decimal", "precision": 2 },
+        { "name": "spa_priority", "type": "Integer" },
+        { "name": "spa_isactive", "type": "Boolean", "required": true }
+      ]
+    },
+    {
+      "logicalName": "spa_responsetemplate",
+      "displayName": "Response Template",
+      "description": "Configuration. Field list per BRD section 12. All templates ship INACTIVE (GAP-004).",
+      "configurationTable": true,
+      "alternateKeys": [{ "name": "spa_ak_templateid", "columns": ["spa_templateid"] }],
+      "columns": [
+        { "name": "spa_templateid", "type": "String", "maxLength": 50, "required": true },
+        { "name": "spa_scenarioid", "type": "String", "maxLength": 10, "required": true },
+        { "name": "spa_program", "type": "Choice", "required": true, "options": ["FIT", "FLO", "MEC_CGR", "ALL"] },
+        { "name": "spa_sendertype", "type": "Choice", "required": true, "options": ["learner", "manager", "peer_trainer", "hr", "internal", "external", "system", "any"] },
+        { "name": "spa_templatetype", "type": "Choice", "required": true, "options": ["Acknowledgement", "Troubleshooting", "ChangeRequest", "Escalation"] },
+        { "name": "spa_subjecttemplate", "type": "String", "maxLength": 500, "required": true },
+        { "name": "spa_bodytemplate", "type": "Memo", "maxLength": 20000, "required": true },
+        { "name": "spa_allowedvariables", "type": "Memo", "maxLength": 1000, "comment": "Enforces BRD section 16 'approved variables'." },
+        { "name": "spa_isactive", "type": "Boolean", "required": true, "defaultValue": false, "comment": "An inactive template can never be sent - enforced in code." },
+        { "name": "spa_version", "type": "String", "maxLength": 20, "required": true },
+        { "name": "spa_effectivedate", "type": "DateTime" },
+        { "name": "spa_lastmodifieddate", "type": "DateTime", "required": true },
+        { "name": "spa_approvedby", "type": "String", "maxLength": 200 }
+      ]
+    },
+    {
+      "logicalName": "spa_regionmapping",
+      "displayName": "Region Mapping",
+      "description": "Configuration. SHIPS EMPTY - region logic is 'To be Provided by Amy' (GAP-012, FR-097).",
+      "configurationTable": true,
+      "columns": [
+        { "name": "spa_matchtype", "type": "Choice", "required": true, "options": ["SenderDomain", "SenderAddress", "LearnerLocation", "DistributionList", "Custom"] },
+        { "name": "spa_matchvalue", "type": "String", "maxLength": 500, "required": true },
+        { "name": "spa_regioncode", "type": "String", "maxLength": 50, "required": true },
+        { "name": "spa_regionname", "type": "String", "maxLength": 200, "required": true },
+        { "name": "spa_priority", "type": "Integer" },
+        { "name": "spa_isactive", "type": "Boolean" }
+      ]
+    },
+    {
+      "logicalName": "spa_configuration",
+      "displayName": "Configuration",
+      "description": "Key/value application configuration. The business-facing surface for tuning thresholds without a deployment (FR-030).",
+      "configurationTable": true,
+      "alternateKeys": [{ "name": "spa_ak_key", "columns": ["spa_key"] }],
+      "columns": [
+        { "name": "spa_key", "type": "String", "maxLength": 200, "required": true },
+        { "name": "spa_value", "type": "Memo", "maxLength": 4000, "required": true },
+        { "name": "spa_datatype", "type": "Choice", "required": true, "options": ["string", "number", "boolean", "json"] },
+        { "name": "spa_category", "type": "Choice", "options": ["Confidence", "Routing", "Safety", "Reporting", "Retry", "Attachment", "Feature"] },
+        { "name": "spa_description", "type": "Memo", "maxLength": 1000, "required": true },
+        { "name": "spa_environment", "type": "Choice", "options": ["ALL", "DEV", "TEST", "PROD"] },
+        { "name": "spa_isactive", "type": "Boolean", "required": true }
+      ]
+    }
+  ],
+  "securityRoles": [
+    {
+      "name": "SPA Automation Service",
+      "description": "The Decision Service principal. Read-only on configuration so the automation can never rewrite its own rules (threat T-11).",
+      "privileges": [
+        { "tables": ["spa_emailprocessing", "spa_classificationresult", "spa_emailaction", "spa_attachment", "spa_processingerror", "spa_humanreviewqueue", "spa_humanreviewcorrection", "spa_weeklyreportrun"], "rights": ["Create", "Read", "Write"] },
+        { "tables": ["spa_businessscenario", "spa_routingrule", "spa_responsetemplate", "spa_regionmapping", "spa_configuration"], "rights": ["Read"] }
+      ]
+    },
+    {
+      "name": "SPA Reviewer",
+      "description": "Human reviewers working the queue (BRD 10).",
+      "privileges": [
+        { "tables": ["spa_humanreviewqueue", "spa_humanreviewcorrection"], "rights": ["Create", "Read", "Write"] },
+        { "tables": ["spa_emailprocessing", "spa_classificationresult", "spa_attachment", "spa_emailaction"], "rights": ["Read"] }
+      ]
+    },
+    {
+      "name": "SPA Configuration Admin",
+      "description": "Business owners who tune scenarios, routing, templates and thresholds.",
+      "privileges": [
+        { "tables": ["spa_businessscenario", "spa_routingrule", "spa_responsetemplate", "spa_regionmapping", "spa_configuration"], "rights": ["Create", "Read", "Write", "Delete"] }
+      ]
+    },
+    {
+      "name": "SPA Report Reader",
+      "description": "Power BI and report consumers.",
+      "privileges": [
+        { "tables": ["spa_emailprocessing", "spa_emailaction", "spa_weeklyreportrun", "spa_businessscenario", "spa_regionmapping"], "rights": ["Read"] }
+      ]
+    }
+  ]
+}

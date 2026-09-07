@@ -1,0 +1,98 @@
+# Deployment for the SPA Mailbox Automation Decision Service (BRD Phase 8, NFR-020).
+#
+# Authentication uses OIDC federated credentials - no publish profile, no client secret in GitHub
+# (Rule 4). Environments carry their own protection rules and approvals.
+
+name: SPA Mailbox Automation CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [dev, test, prod]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: spa-cd-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    # PROD requires a reviewer, configured on the GitHub environment.
+    environment: spa-${{ inputs.environment }}
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install, validate, test
+        # The same gates as CI. A deployment never skips them.
+        run: |
+          npm ci
+          npm run typecheck
+          npm run validate:config
+          npm test
+
+      - name: Build production bundle
+        run: |
+          npm run build
+          npm ci --omit=dev
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure
+        run: |
+          az deployment group create \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --template-file infrastructure/bicep/main.bicep \
+            --parameters infrastructure/bicep/parameters/${{ inputs.environment }}.bicepparam
+
+      - name: Deploy the Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.AZURE_FUNCTION_APP_NAME }}
+          package: .
+
+      - name: Post-deployment health gate
+        # /api/health returns 503 when configuration is invalid, so a bad deployment fails here
+        # rather than silently serving traffic it cannot be trusted with.
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o /tmp/health.json -w '%{http_code}' \
+              "https://${{ vars.AZURE_FUNCTION_APP_HOSTNAME }}/api/health" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Health check passed."
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt $attempt returned $code; retrying."
+            sleep $((attempt * 5))
+          done
+          echo "::error::Health check did not pass. See /api/health output."
+          cat /tmp/health.json || true
+          exit 1
+
+      - name: Remind about the manual Power Platform steps
+        run: |
+          echo "::notice::Import the SPAMailboxAutomation managed solution and run the Configuration"
+          echo "::notice::Migration Tool for scenarios, routing rules, templates and thresholds."
+          echo "::notice::Verify the Exchange Application Access Policy before enabling any outbound flag."
