@@ -1,0 +1,743 @@
+{
+  "$comment": "Routing configuration seeded from BRD section 6. This file is the ONLY source of routing destinations (Rule 16). Seed for Dataverse spa_routingrule. Resolution order: exact programme match, then program=ALL, by ascending priority.",
+  "version": "1.0.0",
+  "lastModified": "2026-09-07",
+  "multiIntent": {
+    "$comment": "AD-003. Precedence is by descending scenario precedence value in scenarios.json; these rules override it.",
+    "precedence": [
+      "SC-08",
+      "SC-04",
+      "SC-07",
+      "SC-01",
+      "SC-02",
+      "SC-03",
+      "SC-05",
+      "SC-09",
+      "SC-06",
+      "SC-12",
+      "SC-10",
+      "SC-11"
+    ],
+    "rules": [
+      {
+        "id": "MI-SCHOOX-PLUS",
+        "when": {
+          "includes": [
+            "SC-07"
+          ],
+          "andAnyOf": [
+            "SC-01",
+            "SC-02",
+            "SC-03",
+            "SC-05",
+            "SC-09",
+            "SC-10"
+          ]
+        },
+        "outcome": "EXECUTE_BOTH",
+        "primary": "SC-07",
+        "note": "BRD 6 Scenario 7 exclusion rule (R-2): FIT/FLO owners are involved only when a separate FIT/FLO issue is present."
+      },
+      {
+        "id": "MI-CR-VS-TECH",
+        "when": {
+          "conflictingSubIntents": [
+            "change_request",
+            "technical"
+          ]
+        },
+        "outcome": "HUMAN_REVIEW",
+        "note": "Contradictory destinations and the BRD gives no precedence."
+      },
+      {
+        "id": "MI-AUTOREPLY-WINS",
+        "when": {
+          "includes": [
+            "SC-08"
+          ]
+        },
+        "outcome": "SINGLE",
+        "primary": "SC-08",
+        "note": "Auto-replies carry no actionable content."
+      },
+      {
+        "id": "MI-CRFORM-WINS",
+        "when": {
+          "includes": [
+            "SC-04"
+          ],
+          "andMachineGenerated": true
+        },
+        "outcome": "SINGLE",
+        "primary": "SC-04"
+      },
+      {
+        "id": "MI-RESOLVED-PLUS",
+        "when": {
+          "includes": [
+            "SC-11"
+          ],
+          "andAnyOther": true
+        },
+        "outcome": "HUMAN_REVIEW",
+        "note": "A thanks combined with an open issue must not silently close it."
+      },
+      {
+        "id": "MI-THREE-OR-MORE",
+        "when": {
+          "distinctActionableIntentsAtLeast": 3
+        },
+        "outcome": "HUMAN_REVIEW"
+      },
+      {
+        "id": "MI-OWNER-CONFLICT",
+        "when": {
+          "differentResolvedOwnersWithNoOverlap": true
+        },
+        "outcome": "HUMAN_REVIEW"
+      }
+    ]
+  },
+  "routingRules": [
+    {
+      "ruleId": "RR-001",
+      "isActive": true,
+      "scenarioId": "SC-01",
+      "program": "FIT",
+      "subIntent": null,
+      "ownerName": "Jordan Beahrs",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": "TPL-SC01-TSHOOT",
+      "actionPlan": [
+        "SendResponse",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 1"
+    },
+    {
+      "ruleId": "RR-002",
+      "isActive": true,
+      "scenarioId": "SC-01",
+      "program": "FLO",
+      "subIntent": null,
+      "ownerName": "Josh Baxter",
+      "ownerEmails": [
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": "TPL-SC01-TSHOOT",
+      "actionPlan": [
+        "SendResponse",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 1"
+    },
+    {
+      "ruleId": "RR-003",
+      "isActive": true,
+      "scenarioId": "SC-01",
+      "program": "UNKNOWN",
+      "subIntent": null,
+      "ownerName": "Jordan Beahrs; Josh Baxter",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com",
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": "TPL-SC01-TSHOOT",
+      "actionPlan": [
+        "SendResponse",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 20,
+      "brdReference": "BRD 6 Scenario 1",
+      "note": "Rule R-1 (FR-027): FIT/FLO not mentioned in the email -> send to BOTH Josh and Jordan. BRD section 8, explicit."
+    },
+    {
+      "ruleId": "RR-004",
+      "isActive": true,
+      "scenarioId": "SC-02",
+      "program": "FIT",
+      "subIntent": null,
+      "ownerName": "Jordan Beahrs",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": "TPL-SC02-TSHOOT",
+      "actionPlan": [
+        "SendResponse",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 2"
+    },
+    {
+      "ruleId": "RR-005",
+      "isActive": true,
+      "scenarioId": "SC-02",
+      "program": "FLO",
+      "subIntent": null,
+      "ownerName": "Josh Baxter",
+      "ownerEmails": [
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": "TPL-SC02-TSHOOT",
+      "actionPlan": [
+        "SendResponse",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 2"
+    },
+    {
+      "ruleId": "RR-006",
+      "isActive": true,
+      "scenarioId": "SC-02",
+      "program": "UNKNOWN",
+      "subIntent": null,
+      "ownerName": "Jordan Beahrs; Josh Baxter",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com",
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": "TPL-SC02-TSHOOT",
+      "actionPlan": [
+        "SendResponse",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 20,
+      "brdReference": "BRD 6 Scenario 2",
+      "note": "Rule R-1 (FR-027): FIT/FLO not mentioned in the email -> send to BOTH Josh and Jordan. BRD section 8, explicit."
+    },
+    {
+      "ruleId": "RR-007",
+      "isActive": true,
+      "scenarioId": "SC-03",
+      "program": "FIT",
+      "subIntent": "technical",
+      "ownerName": "Jordan Beahrs",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 3 (technical access problem)"
+    },
+    {
+      "ruleId": "RR-008",
+      "isActive": true,
+      "scenarioId": "SC-03",
+      "program": "FLO",
+      "subIntent": "technical",
+      "ownerName": "Josh Baxter",
+      "ownerEmails": [
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 3 (technical access problem)"
+    },
+    {
+      "ruleId": "RR-009",
+      "isActive": true,
+      "scenarioId": "SC-03",
+      "program": "UNKNOWN",
+      "subIntent": "technical",
+      "ownerName": "Jordan Beahrs; Josh Baxter",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com",
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 20,
+      "brdReference": "BRD 6 Scenario 3 (technical access problem)",
+      "note": "Rule R-1 (FR-027): FIT/FLO not mentioned in the email -> send to BOTH Josh and Jordan. BRD section 8, explicit."
+    },
+    {
+      "ruleId": "RR-010",
+      "isActive": true,
+      "scenarioId": "SC-05",
+      "program": "FIT",
+      "subIntent": "technical",
+      "ownerName": "Jordan Beahrs",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 5 (existing trainer technical access issue)"
+    },
+    {
+      "ruleId": "RR-011",
+      "isActive": true,
+      "scenarioId": "SC-05",
+      "program": "FLO",
+      "subIntent": "technical",
+      "ownerName": "Josh Baxter",
+      "ownerEmails": [
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 5 (existing trainer technical access issue)"
+    },
+    {
+      "ruleId": "RR-012",
+      "isActive": true,
+      "scenarioId": "SC-05",
+      "program": "UNKNOWN",
+      "subIntent": "technical",
+      "ownerName": "Jordan Beahrs; Josh Baxter",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com",
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 20,
+      "brdReference": "BRD 6 Scenario 5 (existing trainer technical access issue)",
+      "note": "Rule R-1 (FR-027): FIT/FLO not mentioned in the email -> send to BOTH Josh and Jordan. BRD section 8, explicit."
+    },
+    {
+      "ruleId": "RR-013",
+      "isActive": true,
+      "scenarioId": "SC-09",
+      "program": "FIT",
+      "subIntent": "technical",
+      "ownerName": "Jordan Beahrs",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 9 (technical issue)"
+    },
+    {
+      "ruleId": "RR-014",
+      "isActive": true,
+      "scenarioId": "SC-09",
+      "program": "FLO",
+      "subIntent": "technical",
+      "ownerName": "Josh Baxter",
+      "ownerEmails": [
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 9 (technical issue)"
+    },
+    {
+      "ruleId": "RR-015",
+      "isActive": true,
+      "scenarioId": "SC-09",
+      "program": "UNKNOWN",
+      "subIntent": "technical",
+      "ownerName": "Jordan Beahrs; Josh Baxter",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com",
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 20,
+      "brdReference": "BRD 6 Scenario 9 (technical issue)",
+      "note": "Rule R-1 (FR-027): FIT/FLO not mentioned in the email -> send to BOTH Josh and Jordan. BRD section 8, explicit."
+    },
+    {
+      "ruleId": "RR-016",
+      "isActive": true,
+      "scenarioId": "SC-10",
+      "program": "FIT",
+      "subIntent": null,
+      "ownerName": "Jordan Beahrs",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 10"
+    },
+    {
+      "ruleId": "RR-017",
+      "isActive": true,
+      "scenarioId": "SC-10",
+      "program": "FLO",
+      "subIntent": null,
+      "ownerName": "Josh Baxter",
+      "ownerEmails": [
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 10"
+    },
+    {
+      "ruleId": "RR-018",
+      "isActive": true,
+      "scenarioId": "SC-10",
+      "program": "UNKNOWN",
+      "subIntent": null,
+      "ownerName": "Jordan Beahrs; Josh Baxter",
+      "ownerEmails": [
+        "Jordan.Beahrs@pepsico.com",
+        "Josh.Baxter@pepsico.com"
+      ],
+      "routingTarget": "PROGRAM_OWNER",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005 - folder name not supplied by the BRD for this scenario. No move is performed until Business answers Q-07.",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 20,
+      "brdReference": "BRD 6 Scenario 10",
+      "note": "Rule R-1 (FR-027): FIT/FLO not mentioned in the email -> send to BOTH Josh and Jordan. BRD section 8, explicit."
+    },
+    {
+      "ruleId": "RR-019",
+      "isActive": true,
+      "scenarioId": "SC-03",
+      "program": "ALL",
+      "subIntent": "change_request",
+      "ownerName": "PEP Passport Change Request Process",
+      "ownerEmails": [],
+      "ownerEmailsGap": "GAP-003 - the change-request mailbox/URL is not defined in the BRD. Populate after Q-04 is answered.",
+      "routingTarget": "CHANGE_REQUEST",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005",
+      "responseTemplateId": "TPL-SC03-CR",
+      "actionPlan": [
+        "SendResponse",
+        "RouteToChangeRequest",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 3 (change requests must follow the formal PEP Passport change-request process)"
+    },
+    {
+      "ruleId": "RR-020",
+      "isActive": true,
+      "scenarioId": "SC-05",
+      "program": "ALL",
+      "subIntent": "change_request",
+      "ownerName": "PEP Passport Change Request Process",
+      "ownerEmails": [],
+      "ownerEmailsGap": "GAP-003 - the change-request mailbox/URL is not defined in the BRD. Populate after Q-04 is answered.",
+      "routingTarget": "CHANGE_REQUEST",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005",
+      "responseTemplateId": "TPL-SC05-CR",
+      "actionPlan": [
+        "SendResponse",
+        "RouteToChangeRequest",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 5 (trainer change required)"
+    },
+    {
+      "ruleId": "RR-021",
+      "isActive": true,
+      "scenarioId": "SC-06",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": "PEP Passport Change Request Process",
+      "ownerEmails": [],
+      "ownerEmailsGap": "GAP-003 - the change-request mailbox/URL is not defined in the BRD. Populate after Q-04 is answered.",
+      "routingTarget": "CHANGE_REQUEST",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005",
+      "responseTemplateId": "TPL-SC06-CR",
+      "actionPlan": [
+        "SendResponse",
+        "RouteToChangeRequest",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 6 (route to formal change-request process)"
+    },
+    {
+      "ruleId": "RR-022",
+      "isActive": true,
+      "scenarioId": "SC-09",
+      "program": "ALL",
+      "subIntent": "change_request",
+      "ownerName": "PEP Passport Change Request Process",
+      "ownerEmails": [],
+      "ownerEmailsGap": "GAP-003 - the change-request mailbox/URL is not defined in the BRD. Populate after Q-04 is answered.",
+      "routingTarget": "CHANGE_REQUEST",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005",
+      "responseTemplateId": "TPL-SC09-CR",
+      "actionPlan": [
+        "SendResponse",
+        "RouteToChangeRequest",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 9 (route to change-request process where applicable)"
+    },
+    {
+      "ruleId": "RR-023",
+      "isActive": true,
+      "scenarioId": "SC-12",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": "PEP Passport Change Request Process",
+      "ownerEmails": [],
+      "ownerEmailsGap": "GAP-003 - the change-request mailbox/URL is not defined in the BRD. Populate after Q-04 is answered.",
+      "routingTarget": "CHANGE_REQUEST",
+      "destinationFolder": null,
+      "destinationFolderGap": "GAP-005",
+      "responseTemplateId": "TPL-SC12-CR-LEARNER",
+      "actionPlan": [
+        "SendResponse",
+        "RouteToChangeRequest",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 12 (route to formal change-request process)"
+    },
+    {
+      "ruleId": "RR-024",
+      "isActive": true,
+      "scenarioId": "SC-04",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": null,
+      "ownerEmails": [],
+      "routingTarget": "NONE",
+      "destinationFolder": "Pep Passport Change Requests",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 4 (No response. Mark as read. Move to Pep Passport Change Requests folder.)"
+    },
+    {
+      "ruleId": "RR-025",
+      "isActive": true,
+      "scenarioId": "SC-07",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": "Amy Fischer",
+      "ownerEmails": [
+        "amy.fischer@pepsico.com"
+      ],
+      "routingTarget": "SCHOOX_OWNER",
+      "destinationFolder": "Schoox",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "RouteToProgramOwner",
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 7 (Route directly to amy.fischer@pepsico.com. Move to Schoox folder.)",
+      "note": "BRD: do not route to FIT/FLO owners unless the email contains a separate FIT/FLO issue (multi-intent rule MI-SCHOOX-PLUS)."
+    },
+    {
+      "ruleId": "RR-026",
+      "isActive": true,
+      "scenarioId": "SC-08",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": null,
+      "ownerEmails": [],
+      "routingTarget": "NONE",
+      "destinationFolder": null,
+      "responseTemplateId": null,
+      "actionPlan": [
+        "MarkAsRead",
+        "DeleteEmail"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 8 (Mark as read. Delete. No response.)",
+      "note": "GAP-006 - the BRD does not say whether delete means Deleted Items or permanent. Defaults to soft delete; hard delete requires safety.hardDeleteEnabled."
+    },
+    {
+      "ruleId": "RR-027",
+      "isActive": true,
+      "scenarioId": "SC-11",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": null,
+      "ownerEmails": [],
+      "routingTarget": "NONE",
+      "destinationFolder": "Resolved",
+      "responseTemplateId": null,
+      "actionPlan": [
+        "MoveEmail",
+        "MarkAsRead"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "BRD 6 Scenario 11 (Mark as read. Move to Resolved folder. No response.)"
+    },
+    {
+      "ruleId": "RR-028",
+      "isActive": true,
+      "scenarioId": "SC-99",
+      "program": "ALL",
+      "subIntent": null,
+      "ownerName": "Human Review Queue",
+      "ownerEmails": [],
+      "routingTarget": "HUMAN_REVIEW",
+      "destinationFolder": null,
+      "responseTemplateId": null,
+      "actionPlan": [
+        "EscalateToHumanReview"
+      ],
+      "confidenceThreshold": null,
+      "priority": 10,
+      "brdReference": "AD-001 / BRD 10 (human intervention for low-confidence and unknown requests)"
+    }
+  ]
+}

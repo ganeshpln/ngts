@@ -1,0 +1,47 @@
+{
+  "$comment": "Central confidence configuration (BRD section 9, FR-030). These values MUST NOT be duplicated anywhere else in the codebase (Rule 3). Business tunes them in the Dataverse Configuration table after pilot testing; this file is the versioned seed and the source used by the test suite.",
+  "version": "1.0.0",
+  "lastModified": "2026-09-07",
+  "confidence": {
+    "$comment": "BRD section 9: >=0.90 high (automatic), 0.75-0.89 medium (restricted), <0.75 human review.",
+    "highThreshold": 0.90,
+    "mediumThreshold": 0.75,
+    "scenarioOverrides": {
+      "$comment": "Per-scenario overrides. SC-04 and SC-08 are machine-generated and near-deterministic; SC-09 is judgement-heavy. Seeded at the BRD defaults - tune after the pilot (Q-25).",
+      "SC-04": { "highThreshold": 0.90, "mediumThreshold": 0.75 },
+      "SC-08": { "highThreshold": 0.90, "mediumThreshold": 0.75 },
+      "SC-09": { "highThreshold": 0.90, "mediumThreshold": 0.75 }
+    },
+    "destructiveActionMinimumBand": "HIGH",
+    "destructiveActions": ["DeleteEmail"]
+  },
+  "penalties": {
+    "$comment": "AD-006. Multiplicative penalties applied to the model's self-reported confidence before banding. A model's self-report is an input, not a verdict.",
+    "noCorroboratingSignal": 0.85,
+    "shortContent": 0.90,
+    "nonEnglishContent": 0.70,
+    "injectionSuspected": 0.50,
+    "invalidEntityFormat": 0.95
+  },
+  "shortContentCharThreshold": 40,
+  "programEvidence": {
+    "$comment": "AD-004. Weighted evidence model for FIT/FLO determination (BRD section 8). Aggregate score at or above programConfidenceThreshold assigns the programme; otherwise UNKNOWN and Rule R-1 fires (route to BOTH owners).",
+    "programConfidenceThreshold": 0.75,
+    "weights": {
+      "explicitProgramMention": 1.00,
+      "businessRule": 0.80,
+      "programSpecificVocabulary": 0.60,
+      "threadHistory": 0.50,
+      "senderHistory": 0.30,
+      "genericKeyword": 0.10
+    },
+    "genericKeywordOnlyCeiling": 0.60,
+    "$comment2": "genericKeywordOnlyCeiling caps programme confidence when generic keywords are the ONLY evidence, structurally enforcing FR-028 (do not infer FIT/FLO with high confidence on insufficient evidence)."
+  },
+  "corroboration": {
+    "$comment": "AD-006. Gives the medium band a defined, testable meaning rather than leaving 'restricted automation' undefined.",
+    "requiredForMediumBand": true,
+    "minimumSignalMatches": 1,
+    "requireValidatorAgreementForMultiIntent": true
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "$comment": "Application configuration and safety controls. Seed for the Dataverse Configuration table. No environment-specific value (endpoint, tenant, mailbox) appears here - those are supplied by environment variables (NFR-021).",
+  "version": "1.0.0",
+  "lastModified": "2026-09-07",
+  "features": {
+    "$comment": "The system ships with every outbound capability DISABLED. Each flag is unblocked by closing the named gap - see docs/solution-design.md section 9.",
+    "shadowMode": { "value": true, "unblockedBy": "Business approval after pilot (ASM-04)", "description": "Classify, decide, validate and audit, but suppress all mailbox side effects." },
+    "sendResponsesEnabled": { "value": false, "unblockedBy": "GAP-004 / Q-02, Q-03 - approved template wording", "description": "Master gate for SendResponse (Rule 14)." },
+    "forwardingEnabled": { "value": false, "unblockedBy": "Owner addresses confirmed and pilot passed", "description": "Master gate for ForwardEmail / RouteToProgramOwner." },
+    "moveEnabled": { "value": false, "unblockedBy": "GAP-005 / Q-07 - folder names", "description": "Master gate for MoveEmail." },
+    "markAsReadEnabled": { "value": false, "unblockedBy": "Pilot sign-off", "description": "Master gate for MarkAsRead." },
+    "deleteEnabled": { "value": false, "unblockedBy": "GAP-006 / Q-08 - delete semantics and retention policy", "description": "Master gate for DeleteEmail (Rule 15)." },
+    "changeRequestRoutingEnabled": { "value": false, "unblockedBy": "GAP-003 / Q-04 - change-request process mechanics", "description": "Master gate for RouteToChangeRequest." },
+    "externalRecipientsEnabled": { "value": false, "unblockedBy": "GAP-017 / Q-11", "description": "Allow outbound mail to senders outside the allow-listed domains." },
+    "attachmentContentHandlers": { "value": false, "unblockedBy": "GAP-019 / Q-20", "description": "Download and process attachment content (e.g. screenshot OCR). Off means attachment content is never downloaded." },
+    "ownerResponseSuppressionEnabled": { "value": true, "unblockedBy": "n/a - BRD 1.11 requirement", "description": "Stop BOT processing once a designated owner has responded on the thread (FR-011)." }
+  },
+  "safety": {
+    "botHeaderName": "X-SPA-Bot-ProcessingId",
+    "botIdentities": [],
+    "$comment_botIdentities": "GAP-013 - populate with the SPA shared mailbox UPN and any alias the automation sends from. Loop prevention degrades to header-based detection only while this is empty.",
+    "allowedRecipientDomains": ["pepsico.com"],
+    "$comment_allowedRecipientDomains": "GAP-017. Outbound mail to any other domain is blocked and the item goes to human review.",
+    "maxOutboundPerConversation": 3,
+    "maxBodyChars": 20000,
+    "maxSubjectChars": 500,
+    "maxReasoningSummaryChars": 600,
+    "hardDeleteEnabled": false,
+    "storeBodyPreview": false,
+    "$comment_storeBodyPreview": "AD-012 / NFR-007. Off means only a SHA-256 body hash is persisted, never the body text.",
+    "ownerResponseSuppression": {
+      "scope": "conversation",
+      "expiryHours": null,
+      "$comment": "GAP-015 / Q-10 - the BRD does not define the scope or duration. expiryHours null means suppression does not expire.",
+      "ownerAddresses": ["Jordan.Beahrs@pepsico.com", "Josh.Baxter@pepsico.com", "amy.fischer@pepsico.com"]
+    },
+    "rateLimits": { "maxMessagesPerSenderPerHour": 20, "maxMessagesPerConversationPerHour": 10 }
+  },
+  "retry": {
+    "$comment": "NFR-001. Applied to every external dependency - see docs/integration-design.md section 9.",
+    "defaultMaxAttempts": 3,
+    "defaultTimeoutMs": 30000,
+    "baseDelayMs": 1000,
+    "maxDelayMs": 32000,
+    "jitter": "full",
+    "sweepIntervalMinutes": 15,
+    "dependencies": {
+      "graphRead":     { "maxAttempts": 3, "timeoutMs": 30000 },
+      "graphWrite":    { "maxAttempts": 3, "timeoutMs": 30000 },
+      "azureOpenAI":   { "maxAttempts": 2, "timeoutMs": 30000 },
+      "dataverseRead": { "maxAttempts": 3, "timeoutMs": 15000 },
+      "dataverseWrite":{ "maxAttempts": 3, "timeoutMs": 15000 },
+      "teams":         { "maxAttempts": 2, "timeoutMs": 15000 }
+    }
+  },
+  "attachments": {
+    "$comment": "FR-080 to FR-083. Metadata is always captured. Content is only ever downloaded when features.attachmentContentHandlers is true AND a registered handler supports the MIME type.",
+    "supportedExtensions": ["png", "jpg", "jpeg", "gif", "bmp", "pdf", "docx", "xlsx", "pptx", "txt", "msg", "eml"],
+    "supportedMimeTypes": ["image/png", "image/jpeg", "image/gif", "image/bmp", "application/pdf", "text/plain"],
+    "maxSizeBytes": 26214400,
+    "ignoreInlineImages": true,
+    "screenshotExtensions": ["png", "jpg", "jpeg", "gif", "bmp"]
+  },
+  "ai": {
+    "$comment": "Model name, deployment and endpoint are supplied per environment. Values here are behavioural defaults only.",
+    "temperature": 0,
+    "maxTokens": 1200,
+    "timeoutMs": 30000,
+    "maxRetries": 2,
+    "repairAttempts": 1,
+    "prompts": {
+      "emailIntentClassifier": { "file": "prompts/email-classifier.md", "version": "1.0.0" },
+      "programClassifier": { "file": "prompts/program-classifier.md", "version": "1.0.0" },
+      "entityExtractor": { "file": "prompts/entity-extractor.md", "version": "1.0.0" },
+      "responseSelector": { "file": "prompts/response-selector.md", "version": "1.0.0" },
+      "routingDecisionValidator": { "file": "prompts/routing-validator.md", "version": "1.0.0" }
+    }
+  },
+  "reporting": {
+    "$comment": "FR-090 to FR-098. GAP-014 / Q-12 - recipients, time and timezone are not defined in the BRD, so there is no default recipient. The flow logs and skips rather than guessing an address.",
+    "timezone": null,
+    "fridayReportHourLocal": null,
+    "recipients": [],
+    "teamsChannelWebhookConfigured": false,
+    "unmappedRegionCode": "UNMAPPED",
+    "includeUnmappedCountInReport": true
+  },
+  "configuration": {
+    "cacheTtlSeconds": 300,
+    "failClosedOnConfigurationError": true
+  },
+  "senderTypes": {
+    "$comment": "GAP-007 / Q-17 - the BRD references sender type for SC-12 template selection but never enumerates it. This seed is FOR REVIEW, not a confirmed business taxonomy.",
+    "values": ["learner", "manager", "peer_trainer", "hr", "internal", "external", "system", "unknown"],
+    "internalDomains": ["pepsico.com"],
+    "defaultWhenUndetermined": "unknown"
+  }
+}

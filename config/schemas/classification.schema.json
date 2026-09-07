@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pepsico.com/spa-mailbox/schemas/classification.schema.json",
+  "title": "SPA Mailbox Classification Result",
+  "description": "Structured output contract for the agentic classifier (BRD section 5 Flow 2, FR-020). Fields routingOwner, routingEmail, destinationFolder and recommendedAction are recorded for audit and comparison but are DISCARDED from the decision path - the deterministic layer resolves those from configuration (Rules 12 and 16).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scenarioId", "program", "intent", "confidence", "senderType", "requiresHumanReview", "extractedEntities", "reasoningSummary"],
+  "properties": {
+    "processingId": { "type": "string", "maxLength": 50 },
+    "scenarioId": { "type": "string", "enum": ["SC-01","SC-02","SC-03","SC-04","SC-05","SC-06","SC-07","SC-08","SC-09","SC-10","SC-11","SC-12","SC-99"] },
+    "scenarioName": { "type": "string", "maxLength": 200 },
+    "program": { "type": "string", "enum": ["FIT","FLO","MEC_CGR","ALL","UNKNOWN"] },
+    "programEvidence": {
+      "type": "array", "maxItems": 10,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["source"],
+        "properties": {
+          "source": { "type": "string", "enum": ["explicitProgramMention","businessRule","programSpecificVocabulary","threadHistory","senderHistory","genericKeyword"] },
+          "detail": { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    "intent": { "type": "string", "maxLength": 200 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "senderType": { "type": "string", "enum": ["learner","manager","peer_trainer","hr","internal","external","system","unknown"] },
+    "requiresHumanReview": { "type": "boolean" },
+    "multiIntent": { "type": "boolean" },
+    "subIntent": { "type": ["string","null"], "enum": ["change_request","technical",null] },
+    "secondaryIntents": {
+      "type": "array", "maxItems": 5,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["scenarioId","confidence"],
+        "properties": {
+          "scenarioId": { "type": "string", "enum": ["SC-01","SC-02","SC-03","SC-04","SC-05","SC-06","SC-07","SC-08","SC-09","SC-10","SC-11","SC-12","SC-99"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "subIntent": { "type": ["string","null"], "enum": ["change_request","technical",null] }
+        }
+      }
+    },
+    "extractedEntities": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "learnerName": { "type": ["string","null"], "maxLength": 200 },
+        "gpid": { "type": ["string","null"], "maxLength": 50 },
+        "email": { "type": ["string","null"], "maxLength": 320 },
+        "program": { "type": ["string","null"], "maxLength": 50 },
+        "island": { "type": ["string","null"], "maxLength": 100 },
+        "week": { "type": ["string","null"], "maxLength": 50 },
+        "errorMessage": { "type": ["string","null"], "maxLength": 1000 }
+      }
+    },
+    "missingRequiredInformation": { "type": "array", "maxItems": 10, "items": { "type": "string", "maxLength": 100 } },
+    "recommendedAction": { "type": ["string","null"], "enum": ["SendResponse","ForwardEmail","MoveEmail","MarkAsRead","DeleteEmail","RouteToChangeRequest","RouteToProgramOwner","EscalateToHumanReview","GenerateReport",null] },
+    "routingOwner": { "type": ["string","null"], "maxLength": 200 },
+    "routingEmail": { "type": ["string","null"], "maxLength": 1000 },
+    "destinationFolder": { "type": ["string","null"], "maxLength": 200 },
+    "responseTemplateId": { "type": ["string","null"], "maxLength": 50 },
+    "reasoningSummary": {
+      "type": "string", "maxLength": 600,
+      "description": "Short business-readable explanation ONLY. Chain-of-thought is prohibited (Rule 11) and the length cap is enforced."
+    },
+    "injectionSuspected": { "type": "boolean" },
+    "languageDetected": { "type": ["string","null"], "maxLength": 20 }
+  }
+}

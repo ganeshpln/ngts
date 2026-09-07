@@ -1,0 +1,365 @@
+{
+  "$comment": "Business scenarios SC-01..SC-12 from BRD section 6, plus SC-99 (implementation decision AD-001). Keywords are EVIDENCE SIGNALS used for corroboration and few-shot context - they are NOT the classification mechanism (BRD section 28). Seed for Dataverse spa_businessscenario.",
+  "version": "1.0.0",
+  "lastModified": "2026-09-07",
+  "scenarios": [
+    {
+      "scenarioId": "SC-01",
+      "scenarioName": "Learner cannot advance in FIT/FLO journey",
+      "brdReference": "BRD 6 Scenario 1",
+      "intent": "learner_blocked_progress",
+      "description": "A learner is unable to progress through their FIT or FLO journey: they cannot move to the next island, cannot submit a questionnaire or survey, a control is greyed out, or their data was not saved.",
+      "keywords": ["cannot move on", "stuck", "island", "advance", "proceed", "submit", "questionnaire", "survey", "greyed out", "trouble submitting", "data not saved"],
+      "positiveExamples": [
+        "I finished island 3 but the Next button is greyed out and I cannot move on.",
+        "I keep having trouble submitting the week 2 questionnaire - it says data not saved.",
+        "I am stuck on the survey and cannot proceed to the next section of my FLO journey."
+      ],
+      "negativeExamples": [
+        "I cannot log in to FIT at all - the authenticator keeps failing.",
+        "Thank you, I am able to work through the modules now.",
+        "Please remove this learner from PEP Passport, they have left the business."
+      ],
+      "programScope": "FIT_FLO",
+      "requiresProgram": true,
+      "allowedActions": ["SendResponse", "RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 40,
+      "subIntents": [],
+      "escalationRule": {
+        "$comment": "GAP-010 - the BRD does not define how 'issue persists' is detected or how long to wait. Disabled until Business answers Q-09.",
+        "enabled": false,
+        "escalateWhen": ["senderConfirmsIssuePersists", "screenshotAttached", "gpidProvided"],
+        "escalateTo": "PROGRAM_OWNER",
+        "waitHours": null
+      },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-02",
+      "scenarioName": "FIT/FLO login, access, authenticator or cache issue",
+      "brdReference": "BRD 6 Scenario 2",
+      "intent": "login_or_access_issue",
+      "description": "A user cannot sign in to or access FIT or FLO. Includes authenticator failures, browser cache problems, missing access permissions, and users who are not registered or enrolled.",
+      "keywords": ["unable to access", "login", "sign in", "authenticator", "cache", "access permissions", "not registered", "enrollment", "cannot access"],
+      "positiveExamples": [
+        "I am unable to access FIT - the authenticator app never sends me a code.",
+        "It says I am not registered when I try to sign in to FLO.",
+        "I cleared my cache but I still cannot access the platform."
+      ],
+      "negativeExamples": [
+        "I can log in fine but the Next button on island 4 is greyed out.",
+        "My manager needs access to see my check-ins.",
+        "Automatic reply: I am out of the office until Monday."
+      ],
+      "programScope": "FIT_FLO",
+      "requiresProgram": true,
+      "allowedActions": ["SendResponse", "RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 40,
+      "subIntents": [],
+      "escalationRule": {
+        "$comment": "GAP-010 - same as SC-01. BRD states the troubleshooting response is sent before escalation where applicable.",
+        "enabled": false,
+        "escalateWhen": ["senderConfirmsIssuePersists", "screenshotAttached", "gpidProvided"],
+        "escalateTo": "PROGRAM_OWNER",
+        "waitHours": null
+      },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-03",
+      "scenarioName": "Manager access / manager change",
+      "brdReference": "BRD 6 Scenario 3",
+      "intent": "manager_access_or_change",
+      "description": "A request concerning a learner's manager: assigning a new manager, correcting a manager ID or manager email, a manager needing access to check-ins, or a direct supervisor change. A request to CHANGE the manager follows the formal PEP Passport change-request process; a manager who cannot technically access what they should already see is a technical issue for the programme owner.",
+      "keywords": ["manager access", "manager change", "new manager", "manager ID", "manager email", "check-ins", "direct supervisor"],
+      "positiveExamples": [
+        "My manager has changed - please update my direct supervisor to Jane Smith.",
+        "The manager ID on my profile is wrong, it should be 1234567.",
+        "My manager cannot see my check-ins even though she is listed as my supervisor."
+      ],
+      "negativeExamples": [
+        "I cannot log in to FLO at all.",
+        "Please remove me from PEP Passport, I have left the company.",
+        "My peer trainer does not appear in the dropdown."
+      ],
+      "programScope": "FIT_FLO",
+      "requiresProgram": false,
+      "allowedActions": ["SendResponse", "RouteToChangeRequest", "RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 30,
+      "subIntents": ["change_request", "technical"],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-04",
+      "scenarioName": "Pep Passport change request form notification / acknowledgement",
+      "brdReference": "BRD 6 Scenario 4",
+      "intent": "change_request_form_notification",
+      "description": "A system-generated notification that a PEP Passport Change Request Form response was received, or an acknowledgement that a submitted request was completed. Machine generated, no human is waiting on a reply.",
+      "keywords": ["New response for Pep Passport Change Request Form", "Request ID", "submitted your request", "completed"],
+      "positiveExamples": [
+        "New response for Pep Passport Change Request Form",
+        "We have received and completed your request. Request ID: CR-102934.",
+        "Thank you, you have submitted your request. Request ID 88213."
+      ],
+      "negativeExamples": [
+        "Please submit a change request to have my manager updated.",
+        "I completed island 2 but cannot advance.",
+        "Automatic reply: out of office."
+      ],
+      "programScope": "ANY",
+      "requiresProgram": false,
+      "allowedActions": ["MoveEmail", "MarkAsRead"],
+      "sendResponseAllowed": false,
+      "deleteAllowed": false,
+      "precedence": 90,
+      "subIntents": [],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-05",
+      "scenarioName": "Peer trainer access / trainer not showing in dropdown",
+      "brdReference": "BRD 6 Scenario 5",
+      "intent": "peer_trainer_access_or_assignment",
+      "description": "A peer trainer cannot be selected or does not appear in the trainer dropdown, or a trainer needs to be assigned or changed for skills checks. A trainer CHANGE follows the change-request process; an existing trainer with a technical access problem goes to the programme owner.",
+      "keywords": ["peer trainer", "trainer access", "dropdown", "does not show name", "assign", "skills check"],
+      "positiveExamples": [
+        "My peer trainer does not show her name in the dropdown when I complete a skills check.",
+        "Please assign a new peer trainer for this learner.",
+        "The trainer has access but cannot sign off the skills check."
+      ],
+      "negativeExamples": [
+        "My manager needs to be changed.",
+        "I cannot access FIT at all.",
+        "Thanks, the trainer shows up now."
+      ],
+      "programScope": "FIT_FLO",
+      "requiresProgram": false,
+      "allowedActions": ["SendResponse", "RouteToChangeRequest", "RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 30,
+      "subIntents": ["change_request", "technical"],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-06",
+      "scenarioName": "Remove learner",
+      "brdReference": "BRD 6 Scenario 6",
+      "intent": "remove_learner",
+      "description": "A request to remove a learner from PEP Passport or FLO, because the employee has left the organisation, or because they were duplicated across both onboarding paths.",
+      "keywords": ["remove from PEP Passport", "no longer with organization", "remove from FLO", "duplication", "both onboarding paths", "employee no longer"],
+      "positiveExamples": [
+        "Please remove John Doe from PEP Passport, he is no longer with the organization.",
+        "This learner is duplicated across both onboarding paths - please remove the FLO record.",
+        "Employee no longer employed, remove from FLO."
+      ],
+      "negativeExamples": [
+        "Please update this learner's email address.",
+        "The learner cannot advance past island 2.",
+        "Please change this learner's manager."
+      ],
+      "programScope": "ANY",
+      "requiresProgram": false,
+      "allowedActions": ["SendResponse", "RouteToChangeRequest", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 20,
+      "subIntents": [],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-07",
+      "scenarioName": "Schoox / MEC / CGR",
+      "brdReference": "BRD 6 Scenario 7",
+      "intent": "schoox_mec_cgr",
+      "description": "Anything relating to the Merch Effectiveness Coach (MEC) pathway, the Schoox platform, CGR, MEC workweeks, decks, resources, capstone or MEC responsibilities.",
+      "keywords": ["Merch Effectiveness Coach", "MEC", "Schoox pathway", "workweeks", "deck", "resources", "capstone", "responsibilities", "CGR"],
+      "positiveExamples": [
+        "Where can I find the MEC workweek 3 deck on Schoox?",
+        "Question about the Merch Effectiveness Coach capstone requirements.",
+        "CGR pathway resources are not loading in Schoox."
+      ],
+      "negativeExamples": [
+        "I cannot advance in my FLO journey.",
+        "Please update my manager.",
+        "Automatic reply: out of office."
+      ],
+      "programScope": "MEC_CGR",
+      "requiresProgram": false,
+      "allowedActions": ["RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": false,
+      "deleteAllowed": false,
+      "precedence": 70,
+      "subIntents": [],
+      "escalationRule": {
+        "$comment": "BRD: do NOT route to FIT/FLO owners unless the email contains a separate FIT/FLO issue. Enforced by the multi-intent resolver rule MI-SCHOOX-PLUS.",
+        "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null
+      },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-08",
+      "scenarioName": "Automatic replies / out-of-office",
+      "brdReference": "BRD 6 Scenario 8",
+      "intent": "auto_reply_out_of_office",
+      "description": "A machine-generated automatic reply or out-of-office notice. Carries no actionable content.",
+      "keywords": ["automatic reply", "out of office", "limited access", "urgent issues"],
+      "positiveExamples": [
+        "Automatic reply: I am out of the office with limited access to email.",
+        "Out of Office: for urgent issues please contact my colleague.",
+        "I am currently out of the office and will have limited access to email."
+      ],
+      "negativeExamples": [
+        "I am out of ideas, I still cannot log in.",
+        "My manager is out of office so please update my supervisor.",
+        "Thank you for the quick response."
+      ],
+      "programScope": "ANY",
+      "requiresProgram": false,
+      "allowedActions": ["MarkAsRead", "DeleteEmail"],
+      "sendResponseAllowed": false,
+      "deleteAllowed": true,
+      "precedence": 100,
+      "subIntents": [],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-09",
+      "scenarioName": "Dashboard / reporting",
+      "brdReference": "BRD 6 Scenario 9",
+      "intent": "dashboard_or_reporting",
+      "description": "A request about dashboard access, location visibility, a full location view, or reporting. A request to GRANT access or widen visibility follows the change-request process; a dashboard that is broken or showing wrong data is a technical issue for the programme owner.",
+      "keywords": ["dashboard", "location visibility", "reporting", "full location view", "dashboard access"],
+      "positiveExamples": [
+        "Please give me dashboard access for my full location view.",
+        "The dashboard is not showing any of my direct reports even though I have access.",
+        "I need reporting visibility for the other locations I now cover."
+      ],
+      "negativeExamples": [
+        "Where do I find the MEC workweek deck?",
+        "I cannot submit my questionnaire.",
+        "Please remove this learner."
+      ],
+      "programScope": "FIT_FLO",
+      "requiresProgram": false,
+      "allowedActions": ["SendResponse", "RouteToChangeRequest", "RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 30,
+      "subIntents": ["change_request", "technical"],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-10",
+      "scenarioName": "Content / materials / resources",
+      "brdReference": "BRD 6 Scenario 10",
+      "intent": "content_materials_resources",
+      "description": "A question about learning content or materials: Articulate 360 or Rise modules, PowerPoint or PDF resources, certification content, or capstone materials for FIT/FLO.",
+      "keywords": ["Articulate360", "Rise", "PowerPoint", "PPT", "PDF", "content", "certification", "capstone"],
+      "positiveExamples": [
+        "The Rise module for week 4 will not open - is there a PDF version?",
+        "Where can I download the certification PPT for FIT?",
+        "The Articulate360 content is showing last year's material."
+      ],
+      "negativeExamples": [
+        "Where is the MEC capstone deck on Schoox?",
+        "I cannot log in.",
+        "Please update my email address."
+      ],
+      "programScope": "FIT_FLO",
+      "requiresProgram": true,
+      "allowedActions": ["RouteToProgramOwner", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": false,
+      "deleteAllowed": false,
+      "precedence": 25,
+      "subIntents": [],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-11",
+      "scenarioName": "Request completed / sender confirms resolved",
+      "brdReference": "BRD 6 Scenario 11",
+      "intent": "resolved_confirmation",
+      "description": "The sender thanks the team or confirms that their issue has been resolved and they are able to work. No further action is needed.",
+      "keywords": ["thank you", "resolved", "all good", "confirmed access", "completed", "able to work"],
+      "positiveExamples": [
+        "Thank you, that worked - I am able to work through the modules now.",
+        "All good now, confirmed access this morning.",
+        "This has been resolved, thanks for your help."
+      ],
+      "negativeExamples": [
+        "Thank you in advance - could you please reset my access?",
+        "Thanks, but I still cannot submit the questionnaire.",
+        "Completed your request. Request ID: CR-1029."
+      ],
+      "programScope": "ANY",
+      "requiresProgram": false,
+      "allowedActions": ["MoveEmail", "MarkAsRead"],
+      "sendResponseAllowed": false,
+      "deleteAllowed": false,
+      "precedence": 10,
+      "subIntents": [],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-12",
+      "scenarioName": "Learner email address update",
+      "brdReference": "BRD 6 Scenario 12",
+      "intent": "learner_email_update",
+      "description": "A learner's email address is incorrect, has changed, or a new address is now ready to be used in PEP Passport.",
+      "keywords": ["new email", "email address ready", "incorrect email", "email change"],
+      "positiveExamples": [
+        "My new email address is ready, please update it in PEP Passport.",
+        "The email address on this learner's record is incorrect.",
+        "I have had an email change - please update my profile."
+      ],
+      "negativeExamples": [
+        "My manager's email is wrong on my profile.",
+        "Please remove this learner from FLO.",
+        "I cannot access my account."
+      ],
+      "programScope": "ANY",
+      "requiresProgram": false,
+      "allowedActions": ["SendResponse", "RouteToChangeRequest", "MoveEmail", "MarkAsRead", "EscalateToHumanReview"],
+      "sendResponseAllowed": true,
+      "deleteAllowed": false,
+      "precedence": 20,
+      "subIntents": [],
+      "escalationRule": { "enabled": false, "escalateWhen": [], "escalateTo": null, "waitHours": null },
+      "isActive": true
+    },
+    {
+      "scenarioId": "SC-99",
+      "scenarioName": "Unknown / unclassifiable",
+      "brdReference": "Implementation decision AD-001 (satisfies FR-012, FR-032, BRD 10)",
+      "intent": "unknown",
+      "description": "The email does not match any of the twelve business scenarios with sufficient evidence, or the classifier returned UNKNOWN. Requires human intervention. This is not a BRD scenario - it exists so that nothing is forced into one of the twelve.",
+      "keywords": [],
+      "positiveExamples": [],
+      "negativeExamples": [],
+      "programScope": "ANY",
+      "requiresProgram": false,
+      "allowedActions": ["EscalateToHumanReview"],
+      "sendResponseAllowed": false,
+      "deleteAllowed": false,
+      "precedence": 0,
+      "subIntents": [],
+      "escalationRule": { "enabled": true, "escalateWhen": ["always"], "escalateTo": "HUMAN_REVIEW", "waitHours": null },
+      "isActive": true
+    }
+  ]
+}

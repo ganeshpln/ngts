@@ -1,0 +1,13 @@
+{
+  "$comment": "REQUIREMENT GAP GAP-012 - the BRD states region logic is 'To be Provided by Amy'. This table SHIPS EMPTY BY DESIGN. Region mapping must not be invented (FR-097). Until Business answers Q-06, every message resolves to region UNMAPPED and the Friday report states how many messages could not be regionalised.",
+  "version": "1.0.0",
+  "lastModified": "2026-09-07",
+  "status": "AWAITING_BUSINESS_INPUT",
+  "awaitingAnswerTo": "Q-06",
+  "matchTypes": {
+    "$comment": "The region KEY itself is unknown (ASM-09), so the table supports several strategies. Business selects one or more when supplying the mapping.",
+    "supported": ["SenderDomain", "SenderAddress", "LearnerLocation", "DistributionList", "Custom"]
+  },
+  "unmappedRegionCode": "UNMAPPED",
+  "mappings": []
+}
