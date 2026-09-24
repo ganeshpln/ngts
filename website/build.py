@@ -13,6 +13,8 @@ PHONE = "+91 96770 10170"
 PHONE_LINK = "+919677010170"
 EMAIL = "admin@nextgentechnologys.com"
 DOMAIN = "nextgentechnologysolutions.com"
+# Formspree form ID: the part after /f/ in your form endpoint, e.g. "xyzabcde".
+FORMSPREE_ID = "YOUR_FORM_ID"
 
 # ---------------------------------------------------------------- icons ----
 # Stroke icons (24x24 viewBox, currentColor).
@@ -677,14 +679,16 @@ def contact():
           </div>
           <div class="panel reveal">
             <h3>Send us a message</h3>
-            <form class="form" id="contact-form" novalidate>
+            <form class="form" id="contact-form" action="https://formspree.io/f/{FORMSPREE_ID}" method="POST">
+              <input type="hidden" name="_subject" value="New website enquiry — NextGen Technology Solutions">
+              <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
               <div class="field"><label for="name">Full name *</label><input id="name" name="name" required autocomplete="name"></div>
               <div class="field"><label for="company">Company *</label><input id="company" name="company" required autocomplete="organization"></div>
               <div class="field"><label for="email">Work email *</label><input id="email" name="email" type="email" required autocomplete="email"></div>
               <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
               <div class="field full"><label for="interest">I'm interested in</label><select id="interest" name="interest">{options}</select></div>
               <div class="field full"><label for="message">Tell us about your processes *</label><textarea id="message" name="message" required placeholder="Which processes take the most manual effort today? Which systems are involved?"></textarea></div>
-              <div class="full btn-row" style="align-items:center"><button class="btn btn--gold" type="submit">Send enquiry {ARROW}</button></div>
+              <div class="full btn-row" style="align-items:center"><button class="btn btn--gold" type="submit" id="form-submit">Send enquiry {ARROW}</button></div>
               <p class="form-status full" id="form-status" role="status"></p>
               <p class="form-note full">We typically reply within one business day.</p>
             </form>

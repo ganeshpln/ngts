@@ -330,6 +330,8 @@ ul { margin: 0; padding: 0; list-style: none; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212, 169, 74, 0.18); }
 .form-note { font-size: 0.85rem; color: var(--dim); margin: 0; }
 .form-status { font-size: 0.95rem; color: var(--gold-soft); margin: 0; min-height: 1.4em; }
+.form-status.is-error { color: #f08a7e; }
+.form .btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
 
 /* Industries */
 .ind { display: flex; flex-direction: column; }

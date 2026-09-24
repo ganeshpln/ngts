@@ -35,11 +35,20 @@ python3 build.py
 
 Styles live in `assets/css/style.css`, behaviour in `assets/js/main.js`.
 
-## Contact form
-The site is fully static, so the contact form opens the visitor's email app
-with the enquiry pre-filled to admin@nextgentechnologys.com. To receive form
-submissions directly instead, point the form at a service such as Formspree,
-Netlify Forms or your own backend.
+## Contact form (Formspree)
+The contact form posts to [Formspree](https://formspree.io), which emails each
+enquiry to you. To switch it on:
+
+1. Sign up at formspree.io (free plan available) with admin@nextgentechnologys.com.
+2. Create a new form. Formspree gives you an endpoint like
+   `https://formspree.io/f/xyzabcde`.
+3. In `build.py`, set `FORMSPREE_ID = "xyzabcde"` (the part after `/f/`).
+4. Run `python3 build.py` and redeploy.
+
+The form submits in the background and shows a success or error message on
+the page. It includes a hidden `_gotcha` honeypot field for spam and a
+`_subject` line for the notification email. The visitor's email is sent in the
+`email` field, so replying to Formspree's notification replies to them.
 
 ## Deploying
 Upload the contents of this folder to any static host (GitHub Pages, Netlify,

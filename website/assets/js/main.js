@@ -46,27 +46,43 @@
   var year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 
-  // Contact form: opens the visitor's email client with the enquiry pre-filled.
+  // Contact form: submits to Formspree in the background and reports the result inline.
   var form = document.getElementById("contact-form");
   if (form) {
+    var status = document.getElementById("form-status");
+    var button = document.getElementById("form-submit");
+    var setStatus = function (text, isError) {
+      status.textContent = text;
+      status.classList.toggle("is-error", !!isError);
+    };
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
-      var d = new FormData(form);
-      var subject = "Enquiry: " + (d.get("interest") || "Free automation assessment") + " — " + d.get("company");
-      var body = [
-        "Name: " + d.get("name"),
-        "Company: " + d.get("company"),
-        "Email: " + d.get("email"),
-        "Phone: " + (d.get("phone") || "-"),
-        "Interested in: " + d.get("interest"),
-        "",
-        d.get("message")
-      ].join("\n");
-      window.location.href = "mailto:admin@nextgentechnologys.com?subject=" +
-        encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-      var status = document.getElementById("form-status");
-      if (status) status.textContent = "Opening your email app — just press send and we'll get back to you within one business day.";
+
+      button.disabled = true;
+      setStatus("Sending your enquiry…");
+
+      fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { Accept: "application/json" }
+      }).then(function (res) {
+        if (res.ok) {
+          form.reset();
+          setStatus("Thank you! Your enquiry has been sent — we'll get back to you within one business day.");
+          return;
+        }
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          var msg = data && data.errors ? data.errors.map(function (x) { return x.message; }).join(", ") : "";
+          throw new Error(msg);
+        });
+      }).catch(function (err) {
+        setStatus("Sorry, your enquiry couldn't be sent" + (err && err.message ? " (" + err.message + ")" : "") +
+          ". Please email admin@nextgentechnologys.com or call +91 96770 10170.", true);
+      }).then(function () {
+        button.disabled = false;
+      });
     });
   }
 })();
